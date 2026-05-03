@@ -13,66 +13,80 @@
             background-size: cover;
             background-attachment: fixed;
         }
+        /* Animasi sederhana untuk sukses */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-custom min-h-screen flex items-center justify-center p-4">
 
-    <div class="bg-white/95 w-full max-w-md rounded-3xl shadow-2xl p-8 backdrop-blur-sm">
+    <div class="bg-white/95 w-full max-w-md rounded-3xl shadow-2xl p-8 backdrop-blur-sm border border-white/20">
         <!-- Logo -->
         <div class="text-center mb-6">
             <img src="https://drive.google.com/uc?export=view&id=1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" alt="Logo" class="w-24 mx-auto mb-2">
             <h1 class="text-xl font-bold text-green-900">Layanan Logistik Kamar</h1>
-            <p class="text-xs text-gray-500">Silakan isi form jika snack/logistik di kamar habis</p>
+            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Haji Khusus 2026</p>
         </div>
 
-        <form id="formPesanan" class="space-y-4">
+        <form id="formPesanan" class="space-y-5">
             <!-- Nomor Kamar -->
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Nomor Kamar</label>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Nomor Kamar</label>
                 <input type="number" id="no_kamar" required placeholder="Contoh: 1205"
-                    class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none transition">
+                    class="w-full p-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-green-600 outline-none transition-all shadow-sm">
             </div>
 
             <!-- Pilih Barang -->
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Pilih Barang</label>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Kebutuhan Logistik</label>
                 <select id="nama_barang" required
-                    class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none transition">
+                    class="w-full p-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-green-600 outline-none transition-all shadow-sm appearance-none">
                     <option value="">-- Pilih Barang --</option>
-                    <option value="Air Mineral">Air Mineral</option>
-                    <option value="Snack Box">Snack Box</option>
-                    <option value="Kopi/Teh">Kopi / Teh</option>
-                    <option value="Tissue">Tissue</option>
+                    <option value="Air Mineral">Air Mineral (Botol)</option>
+                    <option value="Snack Box">Snack Box / Cemilan</option>
+                    <option value="Kopi/Teh">Kopi / Teh / Gula</option>
+                    <option value="Tissue">Tissue Wajah/Toilet</option>
+                    <option value="Laundry Bag">Laundry Bag</option>
                 </select>
             </div>
 
             <!-- Jumlah -->
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Jumlah</label>
-                <div class="flex items-center gap-4">
-                    <button type="button" onclick="stepDown()" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-xl">-</button>
-                    <input type="number" id="qty" value="1" readonly class="w-full text-center font-bold bg-transparent">
-                    <button type="button" onclick="stepUp()" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-xl">+</button>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2 ml-1 text-center">Jumlah Pesanan</label>
+                <div class="flex items-center justify-center gap-6 bg-gray-50/50 p-2 rounded-2xl border border-gray-100">
+                    <button type="button" onclick="stepDown()" class="bg-white w-12 h-12 rounded-xl shadow-sm font-bold text-xl text-green-800 hover:bg-green-50 active:scale-90 transition">-</button>
+                    <input type="number" id="qty" value="1" readonly class="w-12 text-center text-xl font-bold bg-transparent outline-none">
+                    <button type="button" onclick="stepUp()" class="bg-white w-12 h-12 rounded-xl shadow-sm font-bold text-xl text-green-800 hover:bg-green-50 active:scale-90 transition">+</button>
                 </div>
             </div>
 
             <!-- Submit -->
-            <button type="submit" id="btnSubmit"
-                class="w-full bg-green-800 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-green-700 transition active:scale-95">
-                Kirim Pesanan
-            </button>
+            <div class="pt-2">
+                <button type="submit" id="btnSubmit"
+                    class="w-full bg-green-800 text-white font-bold py-5 rounded-2xl shadow-xl shadow-green-900/20 hover:bg-green-700 transition-all active:scale-95 flex justify-center items-center gap-2">
+                    <span>Kirim Pesanan</span>
+                </button>
+            </div>
         </form>
 
-        <div id="statusMsg" class="hidden mt-4 p-3 rounded-lg text-center text-sm"></div>
+        <!-- Status Message -->
+        <div id="statusMsg" class="hidden mt-6 p-4 rounded-2xl text-center text-sm font-medium fade-in"></div>
+        
+        <p class="text-center text-[10px] text-gray-400 mt-8">© 2026 Jejak Imani - Digital Handling System</p>
     </div>
 
     <script>
-        const SCRIPT_URL = 'URL_DEPLOY_APPS_SCRIPT_ANDA'; // Sama dengan URL Apps Script utama
+        // GANTI DENGAN URL DEPLOY SCRIPT ANDA
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3t4ld9deKYGr7OANyiinlCDR9WJqjaQ5NIrxUy7D2faUS8IGBdXlkRhW5E-LtQ_8e/exec';
 
-        function stepUp() { document.getElementById('qty').value++; }
+        function stepUp() { 
+            let qty = document.getElementById('qty');
+            qty.value = parseInt(qty.value) + 1; 
+        }
+        
         function stepDown() { 
-            let val = document.getElementById('qty').value;
-            if(val > 1) document.getElementById('qty').value--;
+            let qty = document.getElementById('qty');
+            if(parseInt(qty.value) > 1) qty.value = parseInt(qty.value) - 1;
         }
 
         document.getElementById('formPesanan').onsubmit = async (e) => {
@@ -80,35 +94,48 @@
             const btn = document.getElementById('btnSubmit');
             const msg = document.getElementById('statusMsg');
             
+            // Persiapan data
+            const noKamar = document.getElementById('no_kamar').value;
+            const barang = document.getElementById('nama_barang').value;
+            const jumlah = document.getElementById('qty').value;
+
+            // UI Feedback
             btn.disabled = true;
-            btn.innerText = "Mengirim...";
-            
-            const data = {
-                action: 'addPesanan',
-                no_kamar: document.getElementById('no_kamar').value,
-                nama_barang: document.getElementById('nama_barang').value,
-                qty: document.getElementById('qty').value
-            };
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Mengirim...`;
+            msg.classList.add('hidden');
 
             try {
-                // Mengirim data ke Apps Script menggunakan POST
-                const response = await fetch(SCRIPT_URL, {
+                // Menggunakan form data agar lebih kompatibel dengan doPost di Apps Script
+                const formData = new URLSearchParams();
+                formData.append('action', 'addPesanan');
+                formData.append('no_kamar', noKamar);
+                formData.append('nama_barang', barang);
+                formData.append('qty', jumlah);
+
+                // Catatan: Apps Script POST sering butuh mode no-cors jika domain berbeda, 
+                // tapi kita coba standar dulu karena kita butuh return JSON.
+                await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(data)
+                    mode: 'no-cors', // Kita gunakan no-cors untuk bypass error pre-flight
+                    body: formData
                 });
                 
-                msg.innerText = "Pesanan terkirim! Tim handling segera ke kamar Anda.";
+                // Karena no-cors tidak bisa baca response, kita asumsikan sukses jika tidak masuk ke catch
+                msg.innerHTML = `<strong>Alhamdulillah!</strong><br>Pesanan ${barang} dikirim ke kamar ${noKamar}. Tim kami segera meluncur.`;
+                msg.className = "mt-6 p-4 rounded-2xl text-center text-sm font-medium fade-in bg-green-50 text-green-800 border border-green-100";
                 msg.classList.remove('hidden');
-                msg.classList.add('bg-green-100', 'text-green-800');
+                
+                // Reset form
                 document.getElementById('formPesanan').reset();
                 document.getElementById('qty').value = 1;
+
             } catch (err) {
-                msg.innerText = "Gagal mengirim. Coba lagi.";
+                msg.innerText = "Afwan, terjadi gangguan koneksi. Silakan coba lagi.";
+                msg.className = "mt-6 p-4 rounded-2xl text-center text-sm font-medium fade-in bg-red-50 text-red-800 border border-red-100";
                 msg.classList.remove('hidden');
-                msg.classList.add('bg-red-100', 'text-red-800');
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Kirim Pesanan";
+                btn.innerHTML = "Kirim Pesanan";
             }
         };
     </script>
