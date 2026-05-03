@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesanan Logistik Kamar - Jejak Imani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Mulish', sans-serif; }
+        .bg-custom { 
+            background-image: url('https://drive.google.com/uc?export=view&id=1S04aXsEdKJ1qAKSNnDNwkzQU5drK2MlP');
+            background-size: cover;
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body class="bg-custom min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white/95 w-full max-w-md rounded-3xl shadow-2xl p-8 backdrop-blur-sm">
+        <!-- Logo -->
+        <div class="text-center mb-6">
+            <img src="https://drive.google.com/uc?export=view&id=1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" alt="Logo" class="w-24 mx-auto mb-2">
+            <h1 class="text-xl font-bold text-green-900">Layanan Logistik Kamar</h1>
+            <p class="text-xs text-gray-500">Silakan isi form jika snack/logistik di kamar habis</p>
+        </div>
+
+        <form id="formPesanan" class="space-y-4">
+            <!-- Nomor Kamar -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Nomor Kamar</label>
+                <input type="number" id="no_kamar" required placeholder="Contoh: 1205"
+                    class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none transition">
+            </div>
+
+            <!-- Pilih Barang -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Pilih Barang</label>
+                <select id="nama_barang" required
+                    class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none transition">
+                    <option value="">-- Pilih Barang --</option>
+                    <option value="Air Mineral">Air Mineral</option>
+                    <option value="Snack Box">Snack Box</option>
+                    <option value="Kopi/Teh">Kopi / Teh</option>
+                    <option value="Tissue">Tissue</option>
+                </select>
+            </div>
+
+            <!-- Jumlah -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Jumlah</label>
+                <div class="flex items-center gap-4">
+                    <button type="button" onclick="stepDown()" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-xl">-</button>
+                    <input type="number" id="qty" value="1" readonly class="w-full text-center font-bold bg-transparent">
+                    <button type="button" onclick="stepUp()" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-xl">+</button>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" id="btnSubmit"
+                class="w-full bg-green-800 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-green-700 transition active:scale-95">
+                Kirim Pesanan
+            </button>
+        </form>
+
+        <div id="statusMsg" class="hidden mt-4 p-3 rounded-lg text-center text-sm"></div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'URL_DEPLOY_APPS_SCRIPT_ANDA'; // Sama dengan URL Apps Script utama
+
+        function stepUp() { document.getElementById('qty').value++; }
+        function stepDown() { 
+            let val = document.getElementById('qty').value;
+            if(val > 1) document.getElementById('qty').value--;
+        }
+
+        document.getElementById('formPesanan').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const msg = document.getElementById('statusMsg');
+            
+            btn.disabled = true;
+            btn.innerText = "Mengirim...";
+            
+            const data = {
+                action: 'addPesanan',
+                no_kamar: document.getElementById('no_kamar').value,
+                nama_barang: document.getElementById('nama_barang').value,
+                qty: document.getElementById('qty').value
+            };
+
+            try {
+                // Mengirim data ke Apps Script menggunakan POST
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                msg.innerText = "Pesanan terkirim! Tim handling segera ke kamar Anda.";
+                msg.classList.remove('hidden');
+                msg.classList.add('bg-green-100', 'text-green-800');
+                document.getElementById('formPesanan').reset();
+                document.getElementById('qty').value = 1;
+            } catch (err) {
+                msg.innerText = "Gagal mengirim. Coba lagi.";
+                msg.classList.remove('hidden');
+                msg.classList.add('bg-red-100', 'text-red-800');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Kirim Pesanan";
+            }
+        };
+    </script>
+</body>
+</html>
