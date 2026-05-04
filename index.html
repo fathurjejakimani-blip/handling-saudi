@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Management Handling - Jejak Imani</title>
+    <title>Handling Haji Pro - Jejak Imani</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,54 +13,47 @@
         .sidebar-item { transition: all 0.2s ease; color: #64748b; font-weight: 500; cursor: pointer; }
         .sidebar-item.active { background-color: #ecfdf5; color: #059669; font-weight: 700; border-right: 4px solid #059669; }
         .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; }
-        .modal-bg { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); }
         
-        #global-loader { background: white; transition: opacity 0.5s ease; }
-        .animate-reveal { animation: reveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        @keyframes reveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Sidebar Toggle Desktop */
+        #sidebar.collapsed { transform: translateX(-100%); position: absolute; }
+        #main-content.expanded { margin-left: 0 !important; }
+
+        /* Table Responsiveness */
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        tr.clickable { cursor: pointer; transition: background 0.2s; }
+        tr.clickable:hover { background-color: #f1f5f9; }
+
+        .modal-detail { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
     </style>
 </head>
 <body class="min-h-screen flex">
 
-    <!-- LOADING STATE -->
-    <div id="global-loader" class="fixed inset-0 z-[200] flex items-center justify-center">
-        <div class="text-center">
-            <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-24 mb-4 animate-pulse mx-auto">
-            <div class="flex justify-center gap-1">
-                <div class="w-2 h-2 bg-emerald-600 rounded-full animate-bounce"></div>
-                <div class="w-2 h-2 bg-emerald-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div class="w-2 h-2 bg-emerald-600 rounded-full animate-bounce [animation-delay:-0.5s]"></div>
-            </div>
-        </div>
-    </div>
-
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out border-r border-slate-100">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transition-all duration-300 border-r border-slate-100">
         <div class="flex flex-col h-full">
             <div class="p-8 flex justify-between items-center border-b border-slate-50">
                 <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-28">
-                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="toggleSidebar()" class="text-slate-400 p-2"><i class="fa-solid fa-xmark text-xl lg:hidden"></i></button>
             </div>
 
             <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
                 <div onclick="navTo('dashboard')" id="btn-dashboard" class="sidebar-item active px-4 py-3 rounded-xl flex items-center gap-4">
-                    <i class="fa-solid fa-chart-line w-5"></i> Dashboard
+                    <i class="fa-solid fa-house-chimney w-5"></i> Dashboard
                 </div>
                 <div onclick="navTo('itinerary')" id="btn-itinerary" class="sidebar-item px-4 py-3 rounded-xl flex items-center gap-4">
-                    <i class="fa-solid fa-calendar-check w-5"></i> Itinerary
+                    <i class="fa-solid fa-route w-5"></i> Itinerary
                 </div>
                 <div onclick="navTo('roomlist')" id="btn-roomlist" class="sidebar-item px-4 py-3 rounded-xl flex items-center gap-4">
-                    <i class="fa-solid fa-bed w-5"></i> Roomlist
+                    <i class="fa-solid fa-hotel w-5"></i> Roomlist
                 </div>
                 <div onclick="navTo('pesanan')" id="btn-pesanan" class="sidebar-item px-4 py-3 rounded-xl flex items-center gap-4">
                     <i class="fa-solid fa-bell-concierge w-5"></i> Pesanan
                 </div>
                 <div onclick="navTo('jamaah')" id="btn-jamaah" class="sidebar-item px-4 py-3 rounded-xl flex items-center gap-4">
-                    <i class="fa-solid fa-users-viewfinder w-5"></i> Data Jamaah
+                    <i class="fa-solid fa-user-group w-5"></i> Data Jamaah
                 </div>
-                <!-- MENU YANG DIMUNCULKAN KEMBALI -->
                 <div onclick="navTo('perlengkapan')" id="btn-perlengkapan" class="sidebar-item px-4 py-3 rounded-xl flex items-center gap-4">
-                    <i class="fa-solid fa-box-archive w-5"></i> Perlengkapan
+                    <i class="fa-solid fa-boxes-packing w-5"></i> Perlengkapan
                 </div>
                 <div onclick="navTo('catatan')" id="btn-catatan" class="sidebar-item px-4 py-3 rounded-xl flex items-center gap-4">
                     <i class="fa-solid fa-note-sticky w-5"></i> Catatan
@@ -70,178 +63,307 @@
     </aside>
 
     <!-- CONTENT AREA -->
-    <div class="flex-1 lg:ml-72 flex flex-col min-h-screen">
+    <div id="main-content" class="flex-1 lg:ml-72 flex flex-col min-h-screen transition-all duration-300">
         <header class="h-20 bg-white/80 backdrop-blur-md border-b sticky top-0 z-40 flex items-center justify-between px-6">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <button onclick="toggleSidebar()" class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center hover:bg-emerald-100">
                     <i class="fa-solid fa-bars-staggered"></i>
                 </button>
-                <h2 id="page-title" class="font-bold text-slate-800 uppercase tracking-widest text-[10px] md:text-sm">Dashboard</h2>
+                <h2 id="page-title" class="font-bold text-slate-800 uppercase tracking-widest text-xs">Dashboard</h2>
             </div>
-            <div id="sync-icon" class="hidden"><i class="fa-solid fa-rotate fa-spin text-emerald-600"></i></div>
+            <div class="flex items-center gap-4">
+                <div id="sync-icon" class="hidden"><i class="fa-solid fa-rotate fa-spin text-emerald-600"></i></div>
+                <div class="text-right hidden sm:block">
+                    <p id="live-clock" class="text-sm font-bold text-slate-800">00:00:00</p>
+                    <p id="hijri-date" class="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter italic">Loading Hijri...</p>
+                </div>
+            </div>
         </header>
 
-        <main id="content-render" class="p-4 md:p-8 transition-all duration-300">
+        <main id="content-render" class="p-4 md:p-8">
             <!-- Content Injected Here -->
         </main>
     </div>
 
-    <!-- MODAL -->
-    <div id="modal" class="fixed inset-0 z-[100] hidden modal-bg flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden animate-reveal">
-            <div class="p-6 border-b flex justify-between items-center">
-                <h3 id="modal-title" class="font-bold text-slate-800 uppercase text-sm tracking-widest">Tambah Data</h3>
-                <button onclick="closeModal()" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+    <!-- MODAL DETAIL POPUP -->
+    <div id="modal-detail" class="fixed inset-0 z-[110] hidden modal-detail flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden">
+            <div class="p-6 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800">Detail Informasi</h3>
+                <button onclick="closeDetail()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
             </div>
-            <form id="modal-form" class="p-6 space-y-4">
-                <div id="form-fields" class="space-y-4"></div>
-                <button type="submit" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all mt-4">Simpan Data</button>
-            </form>
+            <div id="detail-content" class="p-8 space-y-4 max-h-[70vh] overflow-y-auto">
+                <!-- Detail items injected here -->
+            </div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3t4ld9deKYGr7OANyiinlCDR9WJqjaQ5NIrxUy7D2faUS8IGBdXlkRhW5E-LtQ_8e/exec';
-        let currentPage = 'dashboard';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQbna4hGq17tZtzsac7DyTBfoLu4uZ5voegPTjQnnvrBuSB5aoPlJBzCRLZdDPDEud/exec';
+        let fullData = [];
 
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('global-loader').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('global-loader').style.display = 'none';
-                    navTo('dashboard');
-                }, 500);
-            }, 1000);
-        };
+        // 1. JAM & HIJRIAH LOGIC
+        function updateTime() {
+            const now = new Date();
+            const saudiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
+            document.getElementById('live-clock').innerText = saudiTime.toLocaleTimeString('id-ID', { hour12: false });
+            
+            // Sederhana: Hitung Hijriah (Atau gunakan library eksternal untuk presisi tinggi)
+            const options = { day: 'numeric', month: 'long', year: 'numeric', calendar: 'islamic-uma' };
+            document.getElementById('hijri-date').innerText = new Intl.DateTimeFormat('id-ID-u-ca-islamic-uma', options).format(now);
+        }
+        setInterval(updateTime, 1000);
 
+        // 2. SIDEBAR TOGGLE (Desktop & Mobile)
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main-content');
+            sidebar.classList.toggle('collapsed');
+            sidebar.classList.toggle('-translate-x-full');
+            if(window.innerWidth >= 1024) {
+                main.classList.toggle('expanded');
+                main.classList.toggle('lg:ml-72');
+            }
         }
 
+        // 3. NAVIGATION
         function navTo(page) {
-            currentPage = page;
             document.getElementById('page-title').innerText = page;
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`btn-${page}`).classList.add('active');
-
-            if (window.innerWidth < 1024) toggleSidebar();
-            loadData();
+            if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('-translate-x-full');
+            loadData(page);
         }
 
-        async function loadData() {
+        async function loadData(page) {
             const container = document.getElementById('content-render');
-            const syncIcon = document.getElementById('sync-icon');
-            syncIcon.classList.remove('hidden');
+            document.getElementById('sync-icon').classList.remove('hidden');
             
             try {
-                const action = 'get' + currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
-                const res = await fetch(`${SCRIPT_URL}?action=${action}`);
-                const data = await res.json();
-                renderPage(data);
+                const res = await fetch(`${SCRIPT_URL}?action=get${page.charAt(0).toUpperCase() + page.slice(1)}`);
+                fullData = await res.json();
+                renderContent(page, fullData);
             } catch (e) {
-                container.innerHTML = `<div class="text-center p-20 text-slate-400">Gagal memuat data dari sheet ${currentPage}.</div>`;
+                container.innerHTML = `<p class="text-center p-10 text-slate-400">Gagal memuat data.</p>`;
             } finally {
-                syncIcon.classList.add('hidden');
+                document.getElementById('sync-icon').classList.add('hidden');
             }
         }
 
-        function renderPage(data) {
+        // 4. RENDERING CONTENT
+        function renderContent(page, data) {
             const container = document.getElementById('content-render');
-            let html = `<div class="flex justify-between items-center mb-6">
-                            <h1 class="text-xl font-bold text-slate-800 capitalize">${currentPage}</h1>
-                            ${currentPage !== 'dashboard' ? `<button onclick="openModal('add')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-emerald-100 flex items-center gap-2 hover:bg-emerald-700 transition-all"><i class="fa-solid fa-plus"></i> Tambah</button>` : ''}
-                        </div>`;
+            let html = '';
 
-            if (currentPage === 'dashboard') {
+            // Search Bar & Filter Logic (Dinamis)
+            if(['jamaah', 'roomlist', 'perlengkapan'].includes(page)) {
                 html += `
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-emerald-900 p-8 rounded-[2rem] text-white col-span-1 md:col-span-2 relative overflow-hidden shadow-xl shadow-emerald-100">
-                        <i class="fa-solid fa-kaaba absolute right-[-5%] bottom-[-5%] text-[8rem] opacity-10"></i>
-                        <h3 class="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] mb-2">Manajemen Haji 2026</h3>
-                        <p class="text-3xl font-bold">Layanan Sektor Aktif</p>
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-slate-300"></i>
+                        <input type="text" oninput="searchData(this.value, '${page}')" placeholder="Cari data..." class="w-full pl-12 pr-4 py-3 rounded-2xl border-none ring-1 ring-slate-200 focus:ring-emerald-500 outline-none shadow-sm">
                     </div>
-                    <div class="glass-card p-8 rounded-[2rem] flex flex-col justify-center items-center text-center">
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-3"><i class="fa-solid fa-users"></i></div>
-                        <h3 class="text-slate-400 font-bold text-[10px] uppercase mb-1">Total Jamaah</h3>
-                        <p class="text-2xl font-bold text-slate-800">120 Pax</p>
-                    </div>
+                    ${page === 'roomlist' ? `
+                    <select onchange="filterCategory(this.value)" class="bg-white px-4 py-3 rounded-2xl ring-1 ring-slate-200 outline-none text-sm font-bold text-slate-600">
+                        <option value="">Semua Kategori</option>
+                        <option value="Ukhuwah">Ukhuwah</option>
+                        <option value="Rahmah">Rahmah</option>
+                    </select>` : ''}
+                </div>`;
+            }
+
+            if(page === 'dashboard') {
+                html = renderDashboard(data);
+            } else if(page === 'itinerary') {
+                html += `
+                <div class="glass-card rounded-[2rem] table-container">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b">
+                            <tr><th class="px-6 py-4">Waktu Saudi</th><th class="px-6 py-4">Kegiatan</th><th class="px-6 py-4">Lokasi</th></tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-50">
+                            ${data.map(i => `
+                            <tr class="clickable" onclick='showDetail("itinerary", ${JSON.stringify(i)})'>
+                                <td class="px-6 py-4 font-bold text-emerald-700 whitespace-nowrap">${i.waktu_saudi}</td>
+                                <td class="px-6 py-4 text-slate-600 font-semibold truncate max-w-xs">${i.kegiatan}</td>
+                                <td class="px-6 py-4 text-slate-400 text-xs uppercase">${i.lokasi_keterangan || '-'}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            } else if(page === 'roomlist') {
+                html += `
+                <div class="glass-card rounded-[2rem] table-container">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b">
+                            <tr><th class="px-6 py-4">Roomlist</th><th class="px-6 py-4">Kamar</th><th class="px-6 py-4">Jamaah</th><th class="px-6 py-4">Tipe</th></tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-50">
+                            ${data.map(r => `
+                            <tr class="clickable" onclick='showDetail("roomlist", ${JSON.stringify(r)})'>
+                                <td class="px-6 py-4 font-bold text-slate-800">${r.no_roomlist}</td>
+                                <td class="px-6 py-4 font-bold text-emerald-600">${r.no_kamar}</td>
+                                <td class="px-6 py-4 text-slate-600 text-sm">${r.nama_lengkap}</td>
+                                <td class="px-6 py-4 text-slate-400 text-[10px] font-bold uppercase">${r.tipe_kamar}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            } else if(page === 'jamaah') {
+                html += `
+                <div class="glass-card rounded-[2rem] table-container">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b">
+                            <tr><th class="px-6 py-4">Nama Lengkap</th><th class="px-6 py-4">Paspor</th><th class="px-6 py-4">Paket</th></tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-50">
+                            ${data.map(j => `
+                            <tr class="clickable" onclick='showDetail("jamaah", ${JSON.stringify(j)})'>
+                                <td class="px-6 py-4 font-bold text-slate-800">${j.nama_lengkap}</td>
+                                <td class="px-6 py-4 font-mono text-slate-400 text-xs tracking-widest">${j.no_paspor}</td>
+                                <td class="px-6 py-4"><span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase">${j.paket_haji}</span></td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            } else if(page === 'perlengkapan') {
+                html += `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${data.map(p => `
+                    <div class="glass-card p-6 rounded-3xl border-l-4 border-emerald-500">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-slate-800">${p.nama_barang}</h4>
+                            <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">${p.jumlah} Unit</span>
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status: ${p.status || 'Tersedia'}</p>
+                    </div>`).join('')}
                 </div>`;
             } else {
-                html += `<div class="glass-card rounded-[2rem] overflow-hidden overflow-x-auto shadow-sm">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400 tracking-widest border-b">
-                                    <tr>${getHeaders().map(h => `<th class="px-6 py-4">${h}</th>`).join('')}<th class="px-6 py-4 text-center">Aksi</th></tr>
-                                </thead>
-                                <tbody class="divide-y">
-                                    ${data.length === 0 ? `<tr><td colspan="10" class="p-10 text-center text-slate-300">Data belum tersedia</td></tr>` : 
-                                    data.map(item => `
-                                        <tr class="hover:bg-slate-50/50 transition-colors">
-                                            ${getHeaders().map(h => `<td class="px-6 py-4 text-sm font-semibold text-slate-700">${item[h.toLowerCase().replace(' ','_')] || '-'}</td>`).join('')}
-                                            <td class="px-6 py-4 flex justify-center gap-2">
-                                                <button onclick='openModal("edit", ${JSON.stringify(item).replace(/'/g, "&apos;")})' class="text-amber-500 hover:bg-amber-50 w-8 h-8 rounded-lg transition-all"><i class="fa-solid fa-pen-to-square"></i></button>
-                                                <button onclick="deleteData('${item.id}')" class="text-red-400 hover:bg-red-50 w-8 h-8 rounded-lg transition-all"><i class="fa-solid fa-trash"></i></button>
-                                            </td>
-                                        </tr>`).join('')}
-                                </tbody>
-                            </table>
-                        </div>`;
+                // Tampilan default untuk menu lain (Catatan, Pesanan)
+                html += `<div class="p-10 text-center text-slate-300">Modul dalam pengembangan...</div>`;
             }
+
             container.innerHTML = html;
         }
 
-        function getHeaders() {
-            const headers = {
-                itinerary: ['Waktu Saudi', 'Kegiatan'],
-                roomlist: ['No Kamar', 'Nama Lengkap', 'Tipe Kamar'],
-                pesanan: ['No Kamar', 'Nama Barang', 'Qty', 'Status Pesanan'],
-                jamaah: ['Nama Lengkap', 'No Paspor', 'Paket Haji'],
-                perlengkapan: ['Nama Barang', 'Jumlah', 'Status'],
-                catatan: ['Judul', 'Isi Catatan', 'Petugas']
-            };
-            return headers[currentPage] || [];
+        // 5. DASHBOARD RENDERING (COMPLEX)
+        function renderDashboard(data) {
+            return `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Info Utama -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-emerald-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+                        <i class="fa-solid fa-kaaba absolute right-[-5%] bottom-[-5%] text-[10rem] opacity-10"></i>
+                        <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Jadwal Terdekat</h3>
+                        <p class="text-xl font-bold mb-4">Ziarah Makkah & Jabal Rahmah</p>
+                        <div class="flex gap-2">
+                            <span class="bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold">Waktu KSA: 08:30</span>
+                            <span class="bg-emerald-500 px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter italic">Hijriah: 15 Syawal 1447 H</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="glass-card p-6 rounded-3xl">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase mb-4 border-b pb-2 flex justify-between">
+                                <span>🛎️ Pesanan Baru</span>
+                                <span class="text-emerald-600">3 Aktif</span>
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="text-sm font-bold text-slate-700 p-3 bg-slate-50 rounded-xl">Kamar 1205 - Air Mineral (5)</div>
+                                <div class="text-sm font-bold text-slate-700 p-3 bg-slate-50 rounded-xl">Kamar 1402 - Snack Box (2)</div>
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-3xl">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase mb-4 border-b pb-2">🕌 Jadwal Sholat Terupdate</h4>
+                            <div class="grid grid-cols-2 gap-2 text-[11px] font-bold">
+                                <div class="bg-emerald-50 p-2 rounded text-emerald-700">Subuh: 04:52</div>
+                                <div class="bg-slate-50 p-2 rounded text-slate-500">Dzuhur: 12:21</div>
+                                <div class="bg-slate-50 p-2 rounded text-slate-500">Ashar: 15:45</div>
+                                <div class="bg-emerald-500 p-2 rounded text-white">Maghrib: 18:52</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kolom Samping (Catatan) -->
+                <div class="glass-card p-8 rounded-[2.5rem] border-t-8 border-emerald-600">
+                    <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-nib text-emerald-600"></i> Catatan Penting
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-yellow-50 rounded-2xl border-l-4 border-yellow-400">
+                            <h5 class="text-xs font-bold text-yellow-800 mb-1">Briefing Handling</h5>
+                            <p class="text-[11px] text-yellow-700">Kumpulkan koper jamaah ukhuwah paling lambat pukul 20:00 KSA.</p>
+                        </div>
+                        <div class="p-4 bg-emerald-50 rounded-2xl border-l-4 border-emerald-400">
+                            <h5 class="text-xs font-bold text-emerald-800 mb-1">Update Hotel</h5>
+                            <p class="text-[11px] text-emerald-700">Kunci kamar 1401-1410 sudah standby di lobby.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
         }
 
-        function openModal(type, data = null) {
-            const fields = document.getElementById('form-fields');
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = type === 'add' ? `Tambah ${currentPage}` : `Edit ${currentPage}`;
+        // 6. POP-UP DETAIL LOGIC
+        function showDetail(type, item) {
+            const modal = document.getElementById('modal-detail');
+            const content = document.getElementById('detail-content');
+            modal.classList.remove('hidden');
             
-            fields.innerHTML = '';
-            getHeaders().forEach(h => {
-                const key = h.toLowerCase().replace(' ', '_');
-                fields.innerHTML += `
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-widest">${h}</label>
-                        <input type="text" name="${key}" value="${data ? data[key] : ''}" required class="w-full bg-slate-50 border border-slate-100 p-4 rounded-xl outline-none focus:border-emerald-500 font-bold text-slate-700 mt-1">
-                    </div>`;
-            });
-            if(data) fields.innerHTML += `<input type="hidden" name="id" value="${data.id}">`;
+            let html = '';
+            if(type === 'itinerary') {
+                html = `
+                <div class="space-y-4">
+                    <div class="p-4 bg-emerald-50 rounded-2xl"><p class="text-[10px] font-bold text-emerald-600 uppercase">Kegiatan Utama</p><p class="font-bold text-lg text-slate-800">${item.kegiatan}</p></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Waktu Saudi</p><p class="font-bold text-slate-700">${item.waktu_saudi}</p></div>
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Waktu Indonesia</p><p class="font-bold text-slate-700">${item.waktu_wib || '-'}</p></div>
+                    </div>
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase">Lokasi / Keterangan</p><p class="text-sm font-medium text-slate-600">${item.lokasi_keterangan || 'Tidak ada keterangan tambahan'}</p></div>
+                </div>`;
+            } else if(type === 'roomlist') {
+                html = `
+                <div class="space-y-4">
+                    <div class="p-4 bg-emerald-900 text-white rounded-2xl flex justify-between items-center">
+                        <div><p class="text-[10px] font-bold opacity-60">NO KAMAR</p><p class="text-2xl font-bold">${item.no_kamar}</p></div>
+                        <div class="text-right"><p class="text-[10px] font-bold opacity-60">ROOMLIST</p><p class="text-lg font-bold">#${item.no_roomlist}</p></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Nama Jamaah</p><p class="font-bold text-slate-700 text-sm">${item.nama_lengkap}</p></div>
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Tipe Kamar</p><p class="font-bold text-slate-700">${item.tipe_kamar}</p></div>
+                    </div>
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase">Hotel / Kategori</p><p class="text-sm font-bold text-emerald-600">${item.kategori_hotel || '-'} Hotel</p></div>
+                </div>`;
+            } else if(type === 'jamaah') {
+                html = `
+                <div class="space-y-4 text-center">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full mx-auto flex items-center justify-center text-3xl text-slate-300"><i class="fa-solid fa-user"></i></div>
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase">Nama Lengkap</p><p class="text-xl font-bold text-slate-800">${item.nama_lengkap}</p></div>
+                    <div class="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 gap-4">
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">No Paspor</p><p class="font-bold font-mono text-emerald-600">${item.no_paspor}</p></div>
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Paket</p><p class="font-bold text-slate-700 uppercase text-xs">${item.paket_haji}</p></div>
+                    </div>
+                </div>`;
+            }
+
+            content.innerHTML = html;
         }
 
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function closeDetail() { document.getElementById('modal-detail').classList.add('hidden'); }
 
-        document.getElementById('modal-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            data.action = data.id ? 'updateData' : 'addData';
-            data.sheet = currentPage;
+        // 7. SEARCH & FILTER LOGIC
+        function searchData(query, page) {
+            const filtered = fullData.filter(item => 
+                JSON.stringify(item).toLowerCase().includes(query.toLowerCase())
+            );
+            renderContent(page, filtered);
+        }
 
-            closeModal();
-            document.getElementById('sync-icon').classList.remove('hidden');
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', body: new URLSearchParams(data) });
-                loadData();
-            } catch(e) { alert('Terjadi kesalahan saat menyimpan'); }
-        };
-
-        async function deleteData(id) {
-            if(!confirm('Hapus data ini secara permanen?')) return;
-            document.getElementById('sync-icon').classList.remove('hidden');
-            try {
-                await fetch(SCRIPT_URL, { method: 'POST', body: new URLSearchParams({ action: 'deleteData', id: id, sheet: currentPage }) });
-                loadData();
-            } catch(e) { alert('Gagal menghapus data'); }
+        function filterCategory(cat) {
+            const filtered = fullData.filter(item => 
+                cat === "" || item.kategori_hotel === cat
+            );
+            renderContent('roomlist', filtered);
         }
     </script>
 </body>
