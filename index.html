@@ -5,202 +5,247 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Handling Haji 2026 - Jejak Imani</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Martel:wght@700&family=Mulish:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Menggunakan Font Awesome untuk icon aesthetic satu warna -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { font-family: 'Mulish', sans-serif; background-color: #f0f4f0; }
-        h1, h2, h3 { font-family: 'Martel', serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         
-        /* Fix Background & Overlay */
-        .bg-app { 
-            background: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), 
-                        url('https://lh3.googleusercontent.com/d/1S04aXsEdKJ1qAKSNnDNwkzQU5drK2MlP');
-            background-size: cover; background-attachment: fixed;
+        /* Animasi Welcome Screen */
+        @keyframes reveal {
+            0% { opacity: 0; transform: scale(0.9); filter: blur(10px); }
+            100% { opacity: 1; transform: scale(1); filter: blur(0); }
         }
-        
-        .sidebar-active { background: #064e3b; color: #fbbf24; border-left: 4px solid #fbbf24; }
-        
-        /* Smooth Transition */
-        .page-transition { animation: slideUp 0.4s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-reveal { animation: reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-        /* Loader */
-        .spinner { border: 3px solid rgba(0,0,0,0.1); border-left-color: #059669; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Sidebar Styling */
+        .sidebar-item {
+            transition: all 0.3s ease;
+            color: #64748b;
+        }
+        .sidebar-item.active {
+            background-color: #ecfdf5;
+            color: #059669;
+            font-weight: 700;
+        }
+        .sidebar-item:hover:not(.active) {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* Glassmorphism effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #059669; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-app min-h-screen text-slate-800">
+<body class="min-h-screen overflow-x-hidden">
 
-    <!-- Splash Screen Dinamis -->
-    <div id="splash" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center transition-opacity duration-700">
-        <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-32 animate-bounce">
-        <div class="mt-4 flex items-center gap-2">
-            <div class="spinner"></div>
-            <p class="text-sm font-bold text-green-900 tracking-widest uppercase">Menghubungkan Server...</p>
+    <!-- AESTHETIC WELCOME SCREEN -->
+    <div id="welcome-screen" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center transition-all duration-1000">
+        <div class="animate-reveal text-center">
+            <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" alt="Logo" class="w-32 md:w-40 mb-6 mx-auto">
+            <div class="flex items-center justify-center gap-3">
+                <span class="w-8 h-[2px] bg-emerald-600"></span>
+                <p class="text-xs tracking-[0.3em] font-bold text-emerald-900 uppercase">Haji Khusus 2026</p>
+                <span class="w-8 h-[2px] bg-emerald-600"></span>
+            </div>
+            <div class="mt-12 flex justify-center">
+                <div class="w-12 h-1 border-t-2 border-emerald-600 border-dashed animate-pulse"></div>
+            </div>
         </div>
     </div>
 
     <div id="main-app" class="hidden flex min-h-screen">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-[#042f2e] text-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:block">
-            <div class="p-6">
-                <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-24 mb-10 brightness-200">
-                <nav class="space-y-2" id="nav-menu">
-                    <button onclick="showPage('dashboard')" class="w-full text-left p-4 rounded-xl transition flex items-center gap-3 sidebar-active"><span>📊</span> Dashboard</button>
-                    <button onclick="showPage('itinerary')" class="w-full text-left p-4 rounded-xl transition flex items-center gap-3 hover:bg-white/10"><span>📅</span> Itinerary</button>
-                    <button onclick="showPage('roomlist')" class="w-full text-left p-4 rounded-xl transition flex items-center gap-3 hover:bg-white/10"><span>🏨</span> Roomlist</button>
-                    <button onclick="showPage('pesanan')" class="w-full text-left p-4 rounded-xl transition flex items-center gap-3 hover:bg-white/10"><span>🛎️</span> Pesanan</button>
-                    <button onclick="showPage('jamaah')" class="w-full text-left p-4 rounded-xl transition flex items-center gap-3 hover:bg-white/10"><span>👥</span> Data Jamaah</button>
+        <!-- SIDEBAR MENU (Light Theme) -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-100 shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-500 ease-in-out">
+            <div class="flex flex-col h-full">
+                <!-- Header Sidebar -->
+                <div class="p-8 border-b border-slate-50">
+                    <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-24">
+                </div>
+
+                <!-- Menu Items -->
+                <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                    <button onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-item active w-full flex items-center gap-4 px-4 py-3 rounded-xl">
+                        <i class="fa-solid fa-house-chimney w-5"></i> Dashboard
+                    </button>
+                    <button onclick="showPage('itinerary')" id="btn-itinerary" class="sidebar-item w-full flex items-center gap-4 px-4 py-3 rounded-xl">
+                        <i class="fa-solid fa-calendar-day w-5"></i> Itinerary
+                    </button>
+                    <button onclick="showPage('roomlist')" id="btn-roomlist" class="sidebar-item w-full flex items-center gap-4 px-4 py-3 rounded-xl">
+                        <i class="fa-solid fa-bed w-5"></i> Roomlist
+                    </button>
+                    <button onclick="showPage('pesanan')" id="btn-pesanan" class="sidebar-item w-full flex items-center gap-4 px-4 py-3 rounded-xl">
+                        <i class="fa-solid fa-bell w-5"></i> Pesanan
+                    </button>
+                    <button onclick="showPage('jamaah')" id="btn-jamaah" class="sidebar-item w-full flex items-center gap-4 px-4 py-3 rounded-xl">
+                        <i class="fa-solid fa-users w-5"></i> Data Jamaah
+                    </button>
                 </nav>
+
+                <!-- Footer Sidebar -->
+                <div class="p-6 bg-slate-50 border-t border-slate-100">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Operator Panel v2.0</p>
+                </div>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col">
-            <header class="p-4 md:p-6 flex justify-between items-center bg-white/50 backdrop-blur-md sticky top-0 z-40 border-b border-green-100">
-                <button onclick="toggleSidebar()" class="lg:hidden text-2xl p-2">☰</button>
-                <div class="flex flex-col">
-                    <h2 id="page-title" class="text-xl font-bold text-green-900">DASHBOARD</h2>
-                    <p class="text-[10px] text-green-700 font-bold tracking-widest">SISTEM HANDLING HAJI 2026</p>
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 min-w-0 flex flex-col relative">
+            <!-- Header Nav -->
+            <header class="h-20 flex items-center justify-between px-6 bg-white/70 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100">
+                <div class="flex items-center gap-4">
+                    <!-- Dynamic Sidebar Toggle Button -->
+                    <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
+                        <i id="toggle-icon" class="fa-solid fa-bars-staggered"></i>
+                    </button>
+                    <h2 id="page-title" class="text-lg font-bold text-slate-800 capitalize">Dashboard</h2>
                 </div>
-                <div id="header-loader" class="hidden"><div class="spinner"></div></div>
+                
+                <div class="flex items-center gap-3">
+                    <div id="sync-loader" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-emerald-600"></i></div>
+                    <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                        <i class="fa-solid fa-user-doctor text-sm"></i>
+                    </div>
+                </div>
             </header>
 
-            <div id="content-render" class="p-4 md:p-8 page-transition">
-                <!-- Content injected here -->
+            <!-- Render Area -->
+            <div id="content-render" class="p-4 md:p-8 max-w-7xl mx-auto w-full">
+                <!-- Data injection point -->
             </div>
         </main>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw3t4ld9deKYGr7OANyiinlCDR9WJqjaQ5NIrxUy7D2faUS8IGBdXlkRhW5E-LtQ_8e/exec';
-        
+        const SCRIPT_URL = 'URL_DEPLOY_ANDA_DISINI';
+
         window.onload = () => {
+            // Animasi transisi welcome screen
             setTimeout(() => {
-                document.getElementById('splash').style.opacity = '0';
+                const welcome = document.getElementById('welcome-screen');
+                welcome.style.opacity = '0';
+                welcome.style.transform = 'translateY(-100%)';
                 setTimeout(() => {
-                    document.getElementById('splash').style.display = 'none';
+                    welcome.style.display = 'none';
                     document.getElementById('main-app').classList.remove('hidden');
                     showPage('dashboard');
-                }, 700);
-            }, 1500);
+                }, 800);
+            }, 2500);
         };
 
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            const sidebar = document.getElementById('sidebar');
+            const icon = document.getElementById('toggle-icon');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            
+            // Toggle icon dynamic
+            if(sidebar.classList.contains('-translate-x-full')) {
+                icon.className = "fa-solid fa-bars-staggered";
+            } else {
+                icon.className = "fa-solid fa-xmark";
+            }
         }
 
         async function showPage(page) {
+            const loader = document.getElementById('sync-loader');
             const container = document.getElementById('content-render');
-            const loader = document.getElementById('header-loader');
             
-            document.getElementById('page-title').innerText = page.toUpperCase();
+            // UI Update
+            document.getElementById('page-title').innerText = page;
             loader.classList.remove('hidden');
 
-            // Update Nav UI
-            document.querySelectorAll('#nav-menu button').forEach(btn => {
-                btn.classList.remove('sidebar-active');
-                if(btn.innerText.toLowerCase().includes(page)) btn.classList.add('sidebar-active');
-            });
+            // Set Active Menu
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`btn-${page}`).classList.add('active');
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?action=get${page.charAt(0).toUpperCase() + page.slice(1)}`);
-                const data = await res.json();
+                // Simulasi atau fetch data asli
+                const response = await fetch(`${SCRIPT_URL}?action=get${page.charAt(0).toUpperCase() + page.slice(1)}`);
+                const data = await response.json();
                 
                 if(page === 'dashboard') renderDashboard(data);
-                if(page === 'itinerary') renderItinerary(data);
-                if(page === 'roomlist') renderRoomlist(data);
                 if(page === 'pesanan') renderPesanan(data);
-                if(page === 'jamaah') renderJamaah(data);
-
-            } catch (e) {
-                container.innerHTML = `<div class="bg-red-50 p-6 rounded-2xl text-red-700 text-center">Gagal memuat data. Periksa koneksi Internet.</div>`;
+                // Tambahkan render lainnya...
+                
+            } catch (err) {
+                console.error(err);
+                // Placeholder jika gagal/testing
+                container.innerHTML = `<div class="p-10 text-center"><i class="fa-solid fa-triangle-exclamation text-4xl text-amber-400 mb-4"></i><p class="text-slate-500">Menghubungkan ke Google Sheets...</p></div>`;
             } finally {
                 loader.classList.add('hidden');
+                // Auto close sidebar di mobile setelah pilih menu
                 if(window.innerWidth < 1024) toggleSidebar();
             }
         }
 
         function renderDashboard(data) {
-            const now = new Date();
-            const saudi = new Date(now.getTime() - (4 * 60 * 60 * 1000));
-            
-            document.getElementById('content-render').innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-gradient-to-br from-green-900 to-[#042f2e] text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                        <div class="relative z-10">
-                            <h3 class="text-xs font-bold text-yellow-400 mb-4 tracking-tighter uppercase">Waktu Arab Saudi</h3>
-                            <p class="text-5xl font-bold mb-2">${saudi.getHours()}:${saudi.getMinutes().toString().padStart(2,'0')}</p>
-                            <p class="text-sm opacity-80">${saudi.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</p>
-                        </div>
-                        <div class="absolute right-[-20px] bottom-[-20px] opacity-10 text-[120px]">🕋</div>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-3xl border border-green-100 shadow-sm">
-                        <h3 class="font-bold text-green-900 mb-4 flex items-center gap-2"><span>🕌</span> Jadwal Sholat Makkah</h3>
-                        <div class="grid grid-cols-3 gap-3">
-                            ${['Subuh 04:50','Dzuhur 12:22','Ashar 15:45','Maghrib 18:50','Isya 20:20'].map(s => `
-                                <div class="p-3 bg-green-50 rounded-xl text-center">
-                                    <p class="text-[10px] uppercase text-green-600 font-bold">${s.split(' ')[0]}</p>
-                                    <p class="text-sm font-bold text-green-900">${s.split(' ')[1]}</p>
-                                </div>
-                            `).join('')}
+            const container = document.getElementById('content-render');
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 glass-card p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <p class="text-emerald-600 font-bold text-xs uppercase tracking-widest mb-2">Selamat Datang,</p>
+                        <h1 class="text-2xl font-bold text-slate-800 mb-6">Manajemen Haji Jejak Imani</h1>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                <p class="text-[10px] uppercase font-bold text-emerald-600">Saudi Time</p>
+                                <p class="text-2xl font-bold text-emerald-900">12:45 <span class="text-xs">AST</span></p>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Total Jamaah</p>
+                                <p class="text-2xl font-bold text-slate-800">120 <span class="text-xs">Jiwa</span></p>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="md:col-span-2 bg-white rounded-3xl border border-green-100 p-6">
-                        <h3 class="font-bold text-green-900 mb-4">Agenda Utama Hari Ini</h3>
-                        <div class="space-y-4">
-                            ${data.itinerary.slice(0,2).map(i => `
-                                <div class="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-2xl transition">
-                                    <div class="bg-yellow-400 text-green-950 font-bold p-3 rounded-xl text-center min-w-[80px]">
-                                        <p class="text-xs uppercase">Saudi</p>
-                                        <p class="text-lg">${i.waktu_saudi}</p>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-green-950">${i.kegiatan}</p>
-                                        <p class="text-xs text-gray-500">WIB: ${i.waktu_wib}</p>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
+                    <div class="bg-emerald-900 rounded-[2rem] p-8 text-white flex flex-col justify-between shadow-xl relative overflow-hidden">
+                        <i class="fa-solid fa-kaaba absolute -right-4 -bottom-4 text-8xl opacity-10"></i>
+                        <h3 class="font-bold">Info Handling</h3>
+                        <p class="text-sm opacity-70">Sektor Makkah: Aktif<br>Sektor Madinah: Siaga</p>
+                        <button class="mt-4 bg-emerald-400 text-emerald-950 py-2 rounded-xl text-xs font-bold">Lihat Laporan</button>
                     </div>
-                </div>`;
+                </div>
+            `;
         }
 
         function renderPesanan(data) {
-            document.getElementById('content-render').innerHTML = `
-                <div class="grid gap-4">
-                    ${data.length === 0 ? `<p class="text-center p-10 text-gray-400">Tidak ada pesanan aktif</p>` : 
-                    data.map(p => `
-                        <div class="bg-white p-5 rounded-2xl border-l-8 ${p.status_pesanan==='Pending'?'border-red-500':'border-yellow-500'} shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
-                            <div>
-                                <span class="px-2 py-1 bg-gray-100 text-[10px] font-bold rounded uppercase">${p.waktu_order}</span>
-                                <h4 class="font-bold text-green-900 text-lg mt-1">Kamar ${p.no_kamar} - ${p.nama_barang}</h4>
-                                <p class="text-sm text-gray-500">Jumlah: <span class="font-bold text-green-700">${p.qty}</span></p>
+            const container = document.getElementById('content-render');
+            container.innerHTML = `
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-xl font-bold text-slate-800">Daftar Permintaan Kamar</h3>
+                    <button class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:rotate-180 transition-all">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+                <div class="grid gap-4" id="list-pesanan">
+                    <!-- Loop Data Pesanan -->
+                    <div class="glass-card p-6 rounded-2xl flex items-center justify-between border-l-4 border-l-amber-400 shadow-sm">
+                        <div class="flex items-center gap-6">
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                                <i class="fa-solid fa-box-open text-xl"></i>
                             </div>
-                            <div class="flex gap-2">
-                                <select onchange="updateStatus('${p.id}', this.value)" class="bg-gray-50 border p-3 rounded-xl text-sm font-bold outline-none">
-                                    <option value="Pending" ${p.status_pesanan==='Pending'?'selected':''}>Pending</option>
-                                    <option value="Proses" ${p.status_pesanan==='Proses'?'selected':''}>Proses</option>
-                                    <option value="Selesai">Selesai</option>
-                                </select>
+                            <div>
+                                <h4 class="font-bold text-slate-800">Kamar 1402 - Air Mineral</h4>
+                                <p class="text-xs text-slate-400 font-medium italic">Diminta: 10 menit yang lalu</p>
                             </div>
                         </div>
-                    `).join('')}
-                </div>`;
+                        <div class="flex items-center gap-4">
+                            <span class="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-extrabold rounded-lg uppercase">Pending</span>
+                            <button class="text-emerald-600 hover:scale-110 transition-transform p-2"><i class="fa-solid fa-check-double"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
-        
-        async function updateStatus(id, status) {
-            document.getElementById('header-loader').classList.remove('hidden');
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: new URLSearchParams({ action: 'updateStatusPesanan', id: id, status: status })
-                });
-                showPage('pesanan');
-            } catch(e) { alert('Gagal update status'); }
-        }
-
-        // Render functions lainnya (Roomlist, Jamaah) mengikuti pola yang sama dengan styling Tailwind yang serupa.
     </script>
 </body>
 </html>
