@@ -118,8 +118,7 @@
             background: white;
             padding: 10px 20px;
             border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            border: 1px solid #eee;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
 
         @keyframes slide-up {
@@ -140,7 +139,7 @@
     </div>
 
     <!-- 2. LOADING INDICATOR -->
-    <div id="loading" class="loading-overlay z-[100] items-center gap-2">
+    <div id="loading" class="loading-overlay z-[100] items-center gap-2 flex">
         <i class="fas fa-spinner fa-spin text-emerald-600"></i>
         <span class="text-xs font-bold text-slate-600">Sinkronisasi...</span>
     </div>
@@ -213,7 +212,6 @@
             navTo('dashboard');
         });
 
-        // 1. CLOCK & HIJRI (FIXED DATE LOGIC)
         function updateClock() {
             const now = new Date();
             const optionsTime = { timeZone: "Asia/Riyadh", hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
@@ -228,13 +226,12 @@
             document.getElementById('live-date').innerText = `${hijri} H | ${masehi}`;
         }
 
-        // 2. FETCH JADWAL SHOLAT (REALTIME SAUDI)
         async function fetchPrayTimes() {
             try {
                 const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Makkah&country=Saudi+Arabia&method=4');
                 const json = await res.json();
                 prayTimes = json.data.timings;
-                if(document.getElementById('nav-dashboard').classList.contains('active')) navTo('dashboard');
+                if(document.getElementById('nav-dashboard').classList.contains('active')) renderPage('dashboard', false);
             } catch (e) { console.error("Gagal ambil jadwal sholat"); }
         }
 
@@ -243,38 +240,33 @@
             sidebar.classList.toggle('closed');
         }
 
-        // PERBAIKAN: Fungsi POST yang lebih bersih dan menangani sinkronisasi dengan benar
         async function apiPost(action, sheet, data = {}) {
             document.getElementById('loading').style.display = 'flex';
             try {
-                // Jangan gunakan no-cors agar kita bisa mendapatkan respon balik dari Apps Script
-                const response = await fetch(API_URL, {
+                // Gunakan fetch standar tanpa no-cors jika ingin respon, 
+                // namun jika Apps Script belum di-setup CORS, data tetap terkirim tapi respon error.
+                await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action, sheet, data })
                 });
-                const result = await response.json();
-                return result;
+                return { status: 'success' };
             } catch (err) {
-                console.error("POST Error:", err);
-                // Fallback jika terjadi error CORS pada POST, Apps Script biasanya tetap memproses data
-                return { status: 'success' }; 
+                return { status: 'error' };
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        // 3. FASTER NAVIGATION (CACHE-FIRST)
         async function navTo(page) {
             document.getElementById('page-title').innerText = page;
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`nav-${page}`).classList.add('active');
+            const navEl = document.getElementById(`nav-${page}`);
+            if(navEl) navEl.classList.add('active');
             
             if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('closed');
             
-            // Tampilkan cache dulu agar cepat
             renderPage(page, true);
             
-            // Update data di background
             try {
                 let res;
                 if (page === 'dashboard') {
@@ -288,9 +280,7 @@
                 }
                 localStorage.setItem('haji_cache', JSON.stringify(currentData));
                 renderPage(page, false);
-            } catch (e) { 
-                console.warn("Background update failed", e); 
-            }
+            } catch (e) { console.warn("Update data gagal, menggunakan cache."); }
         }
 
         function renderPage(page, isCache) {
@@ -315,7 +305,7 @@
                 } else {
                     html += `
                     <div class="mb-6">
-                        <input type="text" id="search-input" onkeyup="filterData('${page}')" placeholder="Cari data ${page}..." class="w-full p-3 rounded-xl border-none ring-1 ring-slate-200 outline-none">
+                        <input type="text" id="search-input" onkeyup="filterData('${page}')" placeholder="Cari data..." class="w-full p-3 rounded-xl border-none ring-1 ring-slate-200 outline-none">
                     </div>`;
                 }
 
@@ -325,7 +315,7 @@
         }
 
         function renderDashboard(stats) {
-            const sholat = prayTimes || { Subuh: '--', Dhuhr: '--', Asr: '--', Maghrib: '--', Isha: '--' };
+            const sholat = prayTimes || { Fajr: '--', Dhuhr: '--', Asr: '--', Maghrib: '--', Isha: '--' };
             const nextItin = currentData['itinerary'] ? currentData['itinerary'][0] : null;
 
             return `
@@ -341,7 +331,7 @@
                         <div class="glass-card p-6">
                             <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">🕌 Jadwal Sholat (Makkah)</h3>
                             <div class="grid grid-cols-3 gap-2 text-[10px] font-bold">
-                                <div class="p-2 bg-slate-100 rounded text-center">Subuh<br>${sholat.Fajr || sholat.Subuh}</div>
+                                <div class="p-2 bg-slate-100 rounded text-center">Subuh<br>${sholat.Fajr}</div>
                                 <div class="p-2 bg-slate-100 rounded text-center">Dzuhur<br>${sholat.Dhuhr}</div>
                                 <div class="p-2 bg-slate-100 rounded text-center">Ashar<br>${sholat.Asr}</div>
                                 <div class="p-2 bg-emerald-600 text-white rounded text-center">Maghrib<br>${sholat.Maghrib}</div>
@@ -362,7 +352,7 @@
                         <div class="space-y-2">
                             ${(currentData['pesanan'] || []).slice(0,3).map(p => `
                                 <div class="flex justify-between items-center p-3 bg-white rounded-xl shadow-sm border">
-                                    <div><p class="text-xs font-bold">${p.nama_pesanan || p.item}</p><p class="text-[9px] text-slate-400">${p.kamar || '-'}</p></div>
+                                    <div><p class="text-xs font-bold">${p.nama_pesanan || p.item || 'Pesanan'}</p><p class="text-[9px] text-slate-400">${p.kamar || '-'}</p></div>
                                     <span class="text-[9px] px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-bold">${p.status || 'PROSES'}</span>
                                 </div>
                             `).join('') || '<p class="text-center text-xs text-slate-400">Belum ada pesanan aktif</p>'}
@@ -385,7 +375,9 @@
         }
 
         function renderList(page, data) {
-            if (!data || data.length === 0) return `<p class="text-center p-10 text-slate-400">Data tidak ditemukan.</p>`;
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                return `<p class="text-center p-10 text-slate-400">Data tidak ditemukan atau sedang memuat...</p>`;
+            }
             
             if (page === 'itinerary') {
                 data.sort((a, b) => new Date(a.tanggal + ' ' + a.waktu_saudi) - new Date(b.tanggal + ' ' + b.waktu_saudi));
@@ -402,7 +394,7 @@
                 html += `<tr class="hover:bg-emerald-50 cursor-pointer transition" onclick='showDetail("${page}", ${JSON.stringify(item)})'>`;
                 headers.forEach(h => {
                     let val = item[h] || '-';
-                    if (h.toLowerCase().includes('waktu') && val.length > 8 && val.includes('T')) {
+                    if (h.toLowerCase().includes('waktu') && typeof val === 'string' && val.includes('T')) {
                         val = new Date(val).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                     }
                     html += `<td class="px-4 py-4 text-sm font-medium text-slate-700">${val}</td>`;
@@ -416,7 +408,8 @@
         function filterData(page) {
             const query = document.getElementById('search-input').value.toLowerCase();
             const dateVal = document.getElementById('date-filter')?.value;
-            
+            if(!currentData[page]) return;
+
             const filtered = currentData[page].filter(item => {
                 const matchSearch = Object.values(item).some(val => String(val).toLowerCase().includes(query));
                 const matchDate = dateVal ? (item.tanggal === dateVal) : true;
@@ -437,14 +430,12 @@
             }
 
             let html = `<form id="form-entry" class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
-            
             fields.forEach(key => {
                 if (key === 'id') {
                     html += `<input type="hidden" name="id" value="${existingData?.id || ''}">`;
                     return;
                 }
                 const val = existingData ? existingData[key] : '';
-
                 html += `<div><label class="text-[10px] font-bold text-slate-400 uppercase">${key.replace(/_/g,' ')}</label>`;
                 
                 if (page === 'roomlist' && key === 'nama_jamaah') {
@@ -463,28 +454,16 @@
             html += `<div class="md:col-span-2 mt-4">
                 <button type="button" onclick="submitData('${page}', ${existingData ? "'update'" : "'insert'"})" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold">SIMPAN DATA</button>
             </div></form>`;
-            
             body.innerHTML = html;
         }
 
-        // PERBAIKAN: Fungsi submit yang menunggu proses selesai lalu merefresh halaman
         async function submitData(page, action) {
             const form = document.getElementById('form-entry');
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-            
-            // Tutup modal dulu agar user tahu proses dimulai
+            const data = Object.fromEntries(new FormData(form).entries());
+            await apiPost(action, page, data);
+            alert('Data sedang diproses...');
             closeModal();
-            
-            // Kirim data dan tunggu respon
-            const res = await apiPost(action, page, data);
-            
-            if (res.status === 'success' || res) {
-                // Refresh data halaman setelah berhasil
-                await navTo(page);
-            } else {
-                alert('Gagal menyimpan data, silakan coba lagi.');
-            }
+            setTimeout(() => navTo(page), 1000);
         }
 
         function showDetail(type, item) {
@@ -507,13 +486,8 @@
             body.innerHTML = html;
         }
 
-        function editData(page, item) {
-            openEntryForm(page, item);
-        }
-
-        function closeModal() { 
-            document.getElementById('modal').classList.add('hidden'); 
-        }
+        function editData(page, item) { openEntryForm(page, item); }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
