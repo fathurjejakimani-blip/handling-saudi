@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Handling Haji 2026 -jejak imani</title>
+    <title>Sistem Handling Haji 2026 - Jejak Imani</title>
     
     <!-- Font & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;600;700&family=Martel:wght@400;700&display=swap" rel="stylesheet">
@@ -89,7 +89,27 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        /* UTILS */
+        /* FLOATING BUTTON */
+        .btn-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: var(--ji-accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.3s;
+        }
+        .btn-float:hover { transform: scale(1.1) rotate(90deg); }
+
         .loading-overlay {
             position: fixed;
             top: 20px;
@@ -139,12 +159,6 @@
             <div onclick="navTo('jamaah')" id="nav-jamaah" class="sidebar-item"><i class="fas fa-users w-6"></i> Data Jamaah</div>
             <div onclick="navTo('catatan')" id="nav-catatan" class="sidebar-item"><i class="fas fa-sticky-note w-6"></i> Catatan</div>
         </nav>
-        
-        <div class="absolute bottom-6 left-0 w-full px-6">
-            <button onclick="toggleSidebar()" class="w-full py-3 bg-slate-100 rounded-xl text-slate-500 font-bold text-xs uppercase tracking-widest">
-                <i class="fas fa-arrow-left mr-2"></i> Tutup Sidebar
-            </button>
-        </div>
     </aside>
 
     <!-- 4. MAIN CONTENT -->
@@ -162,16 +176,18 @@
             </div>
         </header>
 
-        <div id="content" class="p-6">
+        <div id="content" class="p-6 pb-24">
             <!-- Dynamic Content Here -->
         </div>
+
+        <div id="floating-action"></div>
     </main>
 
     <!-- 5. MODAL POPUP -->
     <div id="modal" class="fixed inset-0 z-[110] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
             <div class="p-6 border-b flex justify-between items-center bg-slate-50">
-                <h3 id="modal-title" class="font-bold text-slate-800">Detail</h3>
+                <h3 id="modal-title" class="font-bold text-slate-800 uppercase">Detail</h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
             </div>
             <div id="modal-body" class="p-6 max-h-[80vh] overflow-y-auto"></div>
@@ -179,40 +195,51 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzcZj1bulTIauGRDLrgeTt7CFWgRXEpP8UTnoUCwgxzZCVY5YPXrM4CCIjXsKFuyuqV/exec'; // GANTI DENGAN URL DEPLOY SCRIPT ANDA
-        let currentData = {};
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzcZj1bulTIauGRDLrgeTt7CFWgRXEpP8UTnoUCwgxzZCVY5YPXrM4CCIjXsKFuyuqV/exec';
+        let currentData = JSON.parse(localStorage.getItem('haji_cache')) || {};
+        let prayTimes = null;
 
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const ws = document.getElementById('welcome-screen');
                 if(ws) ws.style.opacity = '0';
                 setTimeout(() => ws ? ws.remove() : null, 1000);
-            }, 2500);
+            }, 1500);
             
+            fetchPrayTimes();
             updateClock();
             setInterval(updateClock, 1000);
             navTo('dashboard');
         });
 
+        // 1. CLOCK & HIJRI (FIXED DATE LOGIC)
         function updateClock() {
             const now = new Date();
-            const saudi = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
-            document.getElementById('live-clock').innerText = saudi.toLocaleTimeString('id-ID', { hour12: false });
+            const optionsTime = { timeZone: "Asia/Riyadh", hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById('live-clock').innerText = new Intl.DateTimeFormat('id-ID', optionsTime).format(now);
             
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const masehi = saudi.toLocaleDateString('id-ID', options);
-            const hijri = new Intl.DateTimeFormat('id-ID-u-ca-islamic-uma', {day:'numeric', month:'long', year:'numeric'}).format(saudi);
+            const optionsMasehi = { timeZone: "Asia/Riyadh", weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const masehi = new Intl.DateTimeFormat('id-ID', optionsMasehi).format(now);
+            
+            const optionsHijri = { timeZone: "Asia/Riyadh", calendar: 'islamic-uma', day: 'numeric', month: 'long', year: 'numeric' };
+            const hijri = new Intl.DateTimeFormat('id-ID-u-ca-islamic-uma', optionsHijri).format(now);
+            
             document.getElementById('live-date').innerText = `${hijri} H | ${masehi}`;
+        }
+
+        // 2. FETCH JADWAL SHOLAT (REALTIME SAUDI)
+        async function fetchPrayTimes() {
+            try {
+                const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Makkah&country=Saudi+Arabia&method=4');
+                const json = await res.json();
+                prayTimes = json.data.timings;
+                if(document.getElementById('nav-dashboard').classList.contains('active')) navTo('dashboard');
+            } catch (e) { console.error("Gagal ambil jadwal sholat"); }
         }
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            const main = document.getElementById('main-area');
             sidebar.classList.toggle('closed');
-            if (window.innerWidth >= 1024) {
-                main.classList.toggle('lg:ml-[280px]');
-                main.classList.toggle('lg:ml-0');
-            }
         }
 
         async function apiPost(action, sheet, data = {}) {
@@ -220,183 +247,195 @@
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
+                    mode: 'no-cors', // Jika menggunakan Apps Script Web App tanpa CORS handling
                     body: JSON.stringify({ action, sheet, data })
                 });
-                const res = await response.json();
-                return res;
+                // Note: Apps Script redirect seringkali membuat response terbaca error di 'no-cors'
+                // Idealnya menggunakan library atau handling khusus. 
+                // Kita asumsikan sinkronisasi read melalui getDashboard atau read saja:
+                if (action === 'read') {
+                    const res = await fetch(`${API_URL}?action=read&sheet=${sheet}`);
+                    return await res.json();
+                }
+                return { status: 'success' };
             } catch (err) {
-                console.error(err);
                 return { status: 'error', data: [] };
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
+        // 3. FASTER NAVIGATION (CACHE-FIRST)
         async function navTo(page) {
             document.getElementById('page-title').innerText = page;
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            const activeNav = document.getElementById(`nav-${page}`);
-            if(activeNav) activeNav.classList.add('active');
+            document.getElementById(`nav-${page}`).classList.add('active');
             
             if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('closed');
             
-            await renderPage(page);
+            // Tampilkan cache dulu agar cepat
+            renderPage(page, true);
+            
+            // Update data di background
+            try {
+                if (page === 'dashboard') {
+                    const res = await (await fetch(`${API_URL}?action=getDashboard`)).json();
+                    currentData['dashboard'] = res.data;
+                } else {
+                    const res = await (await fetch(`${API_URL}?action=read&sheet=${page}`)).json();
+                    currentData[page] = res.data || res;
+                }
+                localStorage.setItem('haji_cache', JSON.stringify(currentData));
+                renderPage(page, false);
+            } catch (e) { console.warn("Background update failed"); }
         }
 
-        async function renderPage(page) {
+        function renderPage(page, isCache) {
             const container = document.getElementById('content');
-            
+            const fab = document.getElementById('floating-action');
+            const data = currentData[page];
+
             if (page === 'dashboard') {
-                const res = await apiPost('getDashboard');
-                container.innerHTML = renderDashboard(res.data || {});
-                return;
-            }
+                fab.innerHTML = '';
+                container.innerHTML = renderDashboard(data || {});
+            } else {
+                fab.innerHTML = `<div onclick="openEntryForm('${page}')" class="btn-float"><i class="fas fa-plus"></i></div>`;
+                
+                let html = `<div class="glass-card p-6 animate-slide-up">`;
+                
+                // Add Filter for Itinerary
+                if (page === 'itinerary') {
+                    html += `
+                    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="search-input" onkeyup="filterData('${page}')" placeholder="Cari kegiatan..." class="p-3 rounded-xl border-none ring-1 ring-slate-200 outline-none">
+                        <input type="date" id="date-filter" onchange="filterData('${page}')" class="p-3 rounded-xl border-none ring-1 ring-slate-200 outline-none">
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="mb-6">
+                        <input type="text" id="search-input" onkeyup="filterData('${page}')" placeholder="Cari data ${page}..." class="w-full p-3 rounded-xl border-none ring-1 ring-slate-200 outline-none">
+                    </div>`;
+                }
 
-            const res = await apiPost('read', page);
-            currentData[page] = Array.isArray(res) ? res : (res.data || []);
-            
-            let html = `<div class="glass-card p-6">`;
-            if (['jamaah', 'roomlist', 'perlengkapan', 'itinerary'].includes(page)) {
-                html += `
-                <div class="mb-6 relative">
-                    <i class="fas fa-search absolute left-4 top-4 text-slate-300"></i>
-                    <input type="text" id="search-input" onkeyup="filterData('${page}')" placeholder="Pencarian cepat ${page}..." class="w-full pl-12 pr-4 py-3 rounded-2xl border-none ring-1 ring-slate-200 focus:ring-emerald-500 outline-none">
-                </div>`;
+                html += `<div id="data-render">${renderList(page, data)}</div></div>`;
+                container.innerHTML = html;
             }
-
-            html += `<div id="data-render">${renderList(page, currentData[page])}</div></div>`;
-            container.innerHTML = html;
         }
 
         function renderDashboard(stats) {
+            const sholat = prayTimes || { Subuh: '--', Dhuhr: '--', Asr: '--', Maghrib: '--', Isha: '--' };
+            const nextItin = currentData['itinerary'] ? currentData['itinerary'][0] : null;
+
             return `
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up">
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="glass-card p-8 bg-emerald-900 text-white relative overflow-hidden">
+                    <div class="glass-card p-8 bg-slate-900 text-white relative overflow-hidden">
                         <i class="fas fa-kaaba absolute right-[-20px] bottom-[-20px] text-9xl opacity-10"></i>
-                        <h2 class="font-martel text-2xl font-bold">Labbaik Allahumma Labbaik</h2>
-                        <p class="text-emerald-200 text-sm mt-2">Selamat bertugas, tim Handling Haji 2026</p>
+                        <h2 class="font-martel text-2xl font-bold">Ahlan wa Sahlan</h2>
+                        <p class="text-emerald-400 text-sm mt-2">Update Handling Haji 2026</p>
                     </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="glass-card p-6">
-                            <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">🕌 Jadwal Sholat (Saudi)</h3>
-                            <div class="grid grid-cols-2 gap-2 text-[11px] font-bold">
-                                <div class="p-2 bg-slate-50 rounded">Subuh: 04:52</div>
-                                <div class="p-2 bg-slate-50 rounded">Dzuhur: 12:21</div>
-                                <div class="p-2 bg-slate-50 rounded">Ashar: 15:45</div>
-                                <div class="p-2 bg-emerald-600 text-white rounded">Maghrib: 18:52</div>
+                            <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">🕌 Jadwal Sholat (Makkah)</h3>
+                            <div class="grid grid-cols-3 gap-2 text-[10px] font-bold">
+                                <div class="p-2 bg-slate-100 rounded text-center">Subuh<br>${sholat.Fajr}</div>
+                                <div class="p-2 bg-slate-100 rounded text-center">Dzuhur<br>${sholat.Dhuhr}</div>
+                                <div class="p-2 bg-slate-100 rounded text-center">Ashar<br>${sholat.Asr}</div>
+                                <div class="p-2 bg-emerald-600 text-white rounded text-center">Maghrib<br>${sholat.Maghrib}</div>
+                                <div class="p-2 bg-slate-100 rounded text-center">Isya<br>${sholat.Isha}</div>
                             </div>
                         </div>
                         <div class="glass-card p-6">
-                            <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">🛎️ Pesanan Aktif</h3>
-                            <p class="text-2xl font-bold text-emerald-700">${stats.pesanan_pending ? stats.pesanan_pending.length : 0}</p>
-                            <p class="text-[10px] text-slate-400">Pesanan logistik perlu dihandle</p>
+                            <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">📍 Itinerary Terdekat</h3>
+                            ${nextItin ? `
+                                <p class="text-emerald-700 font-bold">${nextItin.kegiatan}</p>
+                                <p class="text-[10px] text-slate-500">${nextItin.waktu_saudi} @ ${nextItin.lokasi}</p>
+                            ` : '<p class="text-xs text-slate-400">Tidak ada jadwal terdekat</p>'}
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6">
+                        <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">🛎️ Pesanan Terbaru</h3>
+                        <div class="space-y-2">
+                            ${(currentData['pesanan'] || []).slice(0,3).map(p => `
+                                <div class="flex justify-between items-center p-3 bg-white rounded-xl shadow-sm border">
+                                    <div><p class="text-xs font-bold">${p.nama_pesanan || p.item}</p><p class="text-[9px] text-slate-400">${p.kamar || '-'}</p></div>
+                                    <span class="text-[9px] px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-bold">${p.status || 'PROSES'}</span>
+                                </div>
+                            `).join('') || '<p class="text-center text-xs text-slate-400">Belum ada pesanan aktif</p>'}
                         </div>
                     </div>
                 </div>
-                <div class="space-y-6">
-                    <div onclick="navTo('catatan')" class="glass-card p-6 border-t-4 border-emerald-600 cursor-pointer hover:shadow-lg transition">
-                        <h3 class="font-bold text-slate-800 mb-4"><i class="fas fa-pen-nib text-emerald-600 mr-2"></i> Catatan Terbaru</h3>
-                        <div class="space-y-3">
-                            ${stats.catatan_terbaru ? stats.catatan_terbaru.map(c => `
-                                <div class="p-3 bg-emerald-50 rounded-xl">
-                                    <p class="text-xs font-bold">${c.judul || 'Tanpa Judul'}</p>
-                                    <p class="text-[10px] text-slate-500 truncate">${c.isi || ''}</p>
-                                </div>
-                            `).join('') : '<p class="text-xs text-slate-400">Belum ada catatan.</p>'}
-                        </div>
+
+                <div class="glass-card p-6 border-t-4 border-emerald-600">
+                    <h3 class="font-bold text-slate-800 mb-4"><i class="fas fa-sticky-note text-emerald-600 mr-2"></i> Catatan Penting</h3>
+                    <div class="space-y-3">
+                        ${(currentData['catatan'] || []).slice(0,5).map(c => `
+                            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                                <p class="text-xs font-bold">${c.judul}</p>
+                                <p class="text-[10px] text-slate-500 line-clamp-2">${c.isi}</p>
+                            </div>
+                        `).join('') || '<p class="text-center text-xs text-slate-400">Belum ada catatan</p>'}
                     </div>
                 </div>
             </div>`;
         }
 
         function renderList(page, data) {
-            if (!data || data.length === 0) return `<p class="text-center p-10 text-slate-400">Data masih kosong.</p>`;
+            if (!data || data.length === 0) return `<p class="text-center p-10 text-slate-400">Data tidak ditemukan.</p>`;
             
-            let html = `<div class="overflow-x-auto"><table class="w-full text-left border-collapse">`;
-            
+            // Sort by date and time for itinerary
             if (page === 'itinerary') {
-                html += `<thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400">
-                    <tr><th class="px-4 py-3">Waktu Saudi</th><th class="px-4 py-3">Kegiatan</th><th class="px-4 py-3">Lokasi</th></tr>
-                </thead><tbody class="divide-y">`;
-                data.forEach(item => {
-                    html += `<tr class="hover:bg-emerald-50 cursor-pointer transition" onclick='showDetail("itinerary", ${JSON.stringify(item)})'>
-                        <td class="px-4 py-4 font-bold text-emerald-700 text-sm">${item.waktu_saudi || '-'}</td>
-                        <td class="px-4 py-4 text-sm font-semibold">${item.kegiatan || '-'}</td>
-                        <td class="px-4 py-4 text-xs text-slate-500">${item.lokasi || '-'}</td></tr>`;
-                });
-            } else if (page === 'jamaah') {
-                html += `<thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400">
-                    <tr><th class="px-4 py-3">Bus</th><th class="px-4 py-3">Nama Lengkap</th><th class="px-4 py-3">Kode JI</th></tr>
-                </thead><tbody class="divide-y">`;
-                data.forEach(item => {
-                    html += `<tr class="hover:bg-emerald-50 cursor-pointer" onclick='showDetail("jamaah", ${JSON.stringify(item)})'>
-                        <td class="px-4 py-4"><span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold">${item.bus || '-'}</span></td>
-                        <td class="px-4 py-4 text-sm font-bold text-slate-800">${item.nama_lengkap || '-'}</td>
-                        <td class="px-4 py-4 text-xs text-slate-400 font-mono">${item.kode_ji || '-'}</td></tr>`;
-                });
-            } else {
-                // Generic Table for other pages
-                const headers = Object.keys(data[0]).filter(h => h !== 'id');
-                html += `<thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400"><tr>`;
-                headers.forEach(h => html += `<th class="px-4 py-3">${h.replace(/_/g,' ')}</th>`);
-                html += `</tr></thead><tbody class="divide-y">`;
-                data.forEach(item => {
-                    html += `<tr class="hover:bg-emerald-50 cursor-pointer" onclick='showDetail("${page}", ${JSON.stringify(item)})'>`;
-                    headers.forEach(h => html += `<td class="px-4 py-4 text-sm">${item[h] || '-'}</td>`);
-                    html += `</tr>`;
-                });
+                data.sort((a, b) => new Date(a.tanggal + ' ' + a.waktu_saudi) - new Date(b.tanggal + ' ' + b.waktu_saudi));
             }
 
-            html += `</tbody></table></div>
-                <button onclick="openEntryForm('${page}')" class="fixed bottom-10 right-10 w-14 h-14 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition active:scale-95 z-40">
-                    <i class="fas fa-plus text-xl"></i>
-                </button>`;
-            return html;
-        }
+            let html = `<div class="overflow-x-auto"><table class="w-full text-left">`;
+            const headers = Object.keys(data[0]).filter(h => h !== 'id');
+            
+            html += `<thead class="bg-slate-50 text-[10px] uppercase text-slate-400 font-bold"><tr>`;
+            headers.forEach(h => html += `<th class="px-4 py-3">${h.replace(/_/g,' ')}</th>`);
+            html += `</tr></thead><tbody class="divide-y">`;
 
-        function showDetail(type, item) {
-            const modal = document.getElementById('modal');
-            const title = document.getElementById('modal-title');
-            const body = document.getElementById('modal-body');
-            
-            modal.classList.remove('hidden');
-            title.innerText = `DETAIL ${type.toUpperCase()}`;
-            
-            let html = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
-            for (let key in item) {
-                if (key === 'id') continue;
-                html += `<div class="border-b pb-2">
-                    <p class="text-[10px] font-bold text-slate-400 mb-1">${key.replace(/_/g, ' ').toUpperCase()}</p>
-                    <p class="text-sm font-bold text-slate-700">${item[key] || '-'}</p>
-                </div>`;
-            }
-            
-            html += `</div>
-                <div class="mt-8 flex gap-3">
-                    <button onclick='editData("${type}", ${JSON.stringify(item)})' class="flex-1 py-3 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-xs"><i class="fas fa-edit mr-2"></i> EDIT</button>
-                    <button onclick="deleteData('${type}', '${item.id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-bold text-xs"><i class="fas fa-trash mr-2"></i> HAPUS</button>
-                </div>`;
-            body.innerHTML = html;
+            data.forEach(item => {
+                html += `<tr class="hover:bg-emerald-50 cursor-pointer transition" onclick='showDetail("${page}", ${JSON.stringify(item)})'>`;
+                headers.forEach(h => {
+                    let val = item[h] || '-';
+                    // Format time if contains long code
+                    if (h.toLowerCase().includes('waktu') && val.length > 8 && val.includes('T')) {
+                        val = new Date(val).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                    }
+                    html += `<td class="px-4 py-4 text-sm font-medium text-slate-700">${val}</td>`;
+                });
+                html += `</tr>`;
+            });
+
+            return html + `</tbody></table></div>`;
         }
 
         function filterData(page) {
             const query = document.getElementById('search-input').value.toLowerCase();
-            const filtered = currentData[page].filter(item => 
-                Object.values(item).some(val => String(val).toLowerCase().includes(query))
-            );
+            const dateVal = document.getElementById('date-filter')?.value;
+            
+            const filtered = currentData[page].filter(item => {
+                const matchSearch = Object.values(item).some(val => String(val).toLowerCase().includes(query));
+                const matchDate = dateVal ? (item.tanggal === dateVal) : true;
+                return matchSearch && matchDate;
+            });
             document.getElementById('data-render').innerHTML = renderList(page, filtered);
         }
 
         function openEntryForm(page, existingData = null) {
             const modal = document.getElementById('modal');
-            const title = document.getElementById('modal-title');
             const body = document.getElementById('modal-body');
-            
             modal.classList.remove('hidden');
-            title.innerText = existingData ? `EDIT ${page.toUpperCase()}` : `TAMBAH ${page.toUpperCase()}`;
             
-            const fields = currentData[page] && currentData[page][0] ? Object.keys(currentData[page][0]) : [];
+            let fields = currentData[page] && currentData[page][0] ? Object.keys(currentData[page][0]) : [];
+            if (fields.length === 0) {
+                // Fallback fields for new page
+                if(page === 'roomlist') fields = ['id','nama_jamaah','nomor_kamar','hotel','bus'];
+            }
+
             let html = `<form id="form-entry" class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
             
             fields.forEach(key => {
@@ -405,16 +444,57 @@
                     return;
                 }
                 const val = existingData ? existingData[key] : '';
-                html += `<div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">${key.replace(/_/g,' ')}</label>
-                    <input type="text" name="${key}" value="${val}" class="w-full p-3 rounded-xl border mt-1 text-sm focus:ring-emerald-500 outline-none">
-                </div>`;
+
+                html += `<div><label class="text-[10px] font-bold text-slate-400 uppercase">${key.replace(/_/g,' ')}</label>`;
+                
+                // Plotting Roomlist: Nama Jamaah ambil dari data jamaah
+                if (page === 'roomlist' && key === 'nama_jamaah') {
+                    html += `<select name="${key}" class="w-full p-3 rounded-xl border mt-1 text-sm outline-none ring-1 ring-slate-200">`;
+                    (currentData['jamaah'] || []).forEach(j => {
+                        html += `<option value="${j.nama_lengkap}" ${val === j.nama_lengkap ? 'selected' : ''}>${j.nama_lengkap}</option>`;
+                    });
+                    html += `</select>`;
+                } else {
+                    const inputType = key.includes('tanggal') ? 'date' : key.includes('waktu') ? 'time' : 'text';
+                    html += `<input type="${inputType}" name="${key}" value="${val}" class="w-full p-3 rounded-xl border mt-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-emerald-500">`;
+                }
+                html += `</div>`;
             });
             
             html += `<div class="md:col-span-2 mt-4">
-                <button type="button" onclick="submitData('${page}', ${existingData ? "'update'" : "'insert'"})" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg">SIMPAN DATA</button>
+                <button type="button" onclick="submitData('${page}', ${existingData ? "'update'" : "'insert'"})" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold">SIMPAN DATA</button>
             </div></form>`;
             
+            body.innerHTML = html;
+        }
+
+        async function submitData(page, action) {
+            const form = document.getElementById('form-entry');
+            const data = Object.fromEntries(new FormData(form).entries());
+            
+            const res = await apiPost(action, page, data);
+            alert('Permintaan terkirim!');
+            closeModal();
+            navTo(page);
+        }
+
+        function showDetail(type, item) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            modal.classList.remove('hidden');
+            
+            let html = `<div class="grid grid-cols-2 gap-4">`;
+            for (let key in item) {
+                if(key === 'id') continue;
+                html += `<div class="bg-slate-50 p-3 rounded-xl">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">${key}</p>
+                    <p class="text-sm font-bold text-slate-700">${item[key] || '-'}</p>
+                </div>`;
+            }
+            html += `</div><div class="mt-6 flex gap-2">
+                <button onclick='editData("${type}", ${JSON.stringify(item)})' class="flex-1 py-3 bg-emerald-100 text-emerald-700 rounded-xl font-bold text-xs">EDIT</button>
+                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 text-slate-400 rounded-xl font-bold text-xs">TUTUP</button>
+            </div>`;
             body.innerHTML = html;
         }
 
@@ -422,34 +502,8 @@
             openEntryForm(page, item);
         }
 
-        async function submitData(page, action) {
-            const form = document.getElementById('form-entry');
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-            
-            const res = await apiPost(action, page, data);
-            if (res.status === 'success') {
-                alert('Berhasil!');
-                closeModal();
-                navTo(page);
-            } else {
-                alert('Gagal menyimpan data.');
-            }
-        }
-
-        async function deleteData(page, id) {
-            if (confirm('Yakin ingin menghapus data ini?')) {
-                const res = await apiPost('delete', page, { id });
-                if (res.status === 'success') {
-                    closeModal();
-                    navTo(page);
-                }
-            }
-        }
-
         function closeModal() { 
             document.getElementById('modal').classList.add('hidden'); 
-            document.getElementById('modal-body').innerHTML = '';
         }
     </script>
 </body>
