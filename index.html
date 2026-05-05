@@ -5,373 +5,492 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Handling Haji 2026 - Jejak Imani</title>
     
+    <!-- Font & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;600;700&family=Martel:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --ji-primary: #0f172a; --ji-accent: #059669; --ji-gold: #d4af37; }
-        body { font-family: 'Mulish', sans-serif; background: #f8fafc; margin: 0; }
+        :root {
+            --ji-primary: #0f172a;
+            --ji-accent: #059669;
+            --ji-gold: #d4af37;
+        }
+
+        body { 
+            font-family: 'Mulish', sans-serif; 
+            background: #f8fafc; /* Fallback color */
+            background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('https://lh3.googleusercontent.com/d/1S04aXsEdKJ1qAKSNnDNwkzQU5drK2MlP');
+            background-attachment: fixed;
+            background-size: cover;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
         h1, h2, h3, .font-martel { font-family: 'Martel', serif; }
 
-        /* Floating Button Fixed */
-        .btn-float {
+        /* WELCOME SCREEN */
+        #welcome-screen {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: var(--ji-accent);
-            color: white;
-            border-radius: 50%;
+            inset: 0;
+            z-index: 9999;
+            background: white;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.4);
-            z-index: 100;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            transition: opacity 0.8s ease-out;
         }
-        .btn-float:hover { transform: scale(1.1); }
+        
+        .logo-anim {
+            width: 180px;
+            animation: pulse-logo 2s infinite ease-in-out;
+        }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.9);
+        @keyframes pulse-logo {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+
+        /* SIDEBAR CUSTOM */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+        
+        .sidebar.closed { transform: translateX(-100%); }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            margin: 4px 12px;
+            border-radius: 12px;
+            color: var(--ji-primary);
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
         }
 
-        .sidebar { width: 280px; transition: transform 0.3s ease; z-index: 50; }
-        .sidebar.closed { transform: translateX(-100%); }
+        .sidebar-item:hover, .sidebar-item.active {
+            background: #f1f5f9;
+            color: var(--ji-accent);
+        }
 
-        /* Loading Spinner */
-        #loading { display: none; }
-        .shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .sidebar-item.active { border-left: 4px solid var(--ji-accent); }
+
+        /* GLASS CARD */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* UTILS */
+        .loading-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: none;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slide-up 0.4s ease-out; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1024px) {
+            .sidebar { width: 100%; max-width: 300px; }
+            .lg\:ml-\[280px\] { margin-left: 0 !important; }
+        }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="text-slate-800">
 
-    <!-- HEADER LOGO (FIXED TOP) -->
-    <header class="lg:ml-[280px] h-20 bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b px-6 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="p-2 text-slate-600 lg:hidden"><i class="fas fa-bars text-xl"></i></button>
-            <h1 id="page-title" class="font-bold text-slate-800 uppercase tracking-tight text-sm lg:text-lg">Dashboard</h1>
+    <!-- 1. WELCOME SCREEN -->
+    <div id="welcome-screen">
+        <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="logo-anim" alt="Logo Jejak Imani">
+        <div class="w-48 h-1 bg-slate-100 mt-8 rounded-full overflow-hidden">
+            <div id="load-bar" class="h-full bg-emerald-600 transition-all duration-500" style="width: 10%"></div>
         </div>
-        <div class="text-right">
-            <p id="live-clock" class="font-bold text-emerald-600 text-lg leading-none">00:00:00</p>
-            <p id="live-date-hijri" class="text-[10px] font-bold text-amber-600 uppercase mt-1"></p>
-            <p id="live-date-masehi" class="text-[9px] text-slate-400 font-semibold"></p>
-        </div>
-    </header>
+        <p class="mt-4 font-martel font-bold text-slate-400 tracking-widest uppercase text-[10px]">Inisialisasi Sistem...</p>
+    </div>
 
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 bg-slate-900 text-white shadow-2xl overflow-y-auto">
-        <div class="p-8 border-b border-slate-800 flex justify-between items-center">
-            <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-32 brightness-200">
+    <!-- 2. LOADING INDICATOR -->
+    <div id="loading" class="loading-overlay z-[100] items-center gap-2 flex">
+        <i class="fas fa-circle-notch fa-spin text-emerald-600"></i>
+        <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Sinkronisasi Data...</span>
+    </div>
+
+    <!-- 3. SIDEBAR -->
+    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 shadow-2xl border-r lg:translate-x-0 closed">
+        <div class="p-6 flex justify-between items-center border-b">
+            <img src="https://lh3.googleusercontent.com/d/1EOlqkwst95ep3vZFoqLj_v_SUV5gNPoD" class="w-24">
+            <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 p-2"><i class="fas fa-times text-xl"></i></button>
         </div>
-        <nav class="p-4 space-y-2">
-            <div onclick="navTo('dashboard')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-home w-5"></i> Dashboard</div>
-            <div onclick="navTo('itinerary')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-calendar-alt w-5"></i> Itinerary</div>
-            <div onclick="navTo('roomlist')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-bed w-5"></i> Roomlist</div>
-            <div onclick="navTo('perlengkapan')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-box w-5"></i> Perlengkapan</div>
-            <div onclick="navTo('pesanan')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-shopping-cart w-5"></i> Pesanan</div>
-            <div onclick="navTo('jamaah')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-users w-5"></i> Data Jamaah</div>
-            <div onclick="navTo('catatan')" class="nav-item p-4 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-emerald-600/20 transition"><i class="fas fa-notes-medical w-5"></i> Catatan Medis</div>
+        <nav class="mt-6 space-y-1">
+            <div onclick="navTo('dashboard')" id="nav-dashboard" class="sidebar-item active"><i class="fas fa-th-large w-6"></i> Dashboard</div>
+            <div onclick="navTo('itinerary')" id="nav-itinerary" class="sidebar-item"><i class="fas fa-calendar-alt w-6"></i> Itinerary</div>
+            <div onclick="navTo('jamaah')" id="nav-jamaah" class="sidebar-item"><i class="fas fa-users w-6"></i> Data Jamaah</div>
+            <div onclick="navTo('roomlist')" id="nav-roomlist" class="sidebar-item"><i class="fas fa-hotel w-6"></i> Roomlist</div>
+            <div onclick="navTo('pesanan')" id="nav-pesanan" class="sidebar-item"><i class="fas fa-shopping-cart w-6"></i> Pesanan</div>
+            <div onclick="navTo('catatan')" id="nav-catatan" class="sidebar-item"><i class="fas fa-sticky-note w-6"></i> Catatan Internal</div>
         </nav>
+        
+        <div class="absolute bottom-6 left-0 w-full px-6">
+            <div class="p-4 bg-emerald-50 rounded-2xl">
+                <p class="text-[10px] font-bold text-emerald-800 uppercase mb-1">Status Server</p>
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span class="text-xs font-semibold text-emerald-700">Online & Terkoneksi</span>
+                </div>
+            </div>
+        </div>
     </aside>
 
-    <!-- MAIN AREA -->
-    <main class="lg:ml-[280px] p-4 lg:p-8">
-        <div id="loading-bar" class="hidden w-full h-1 bg-emerald-500 fixed top-0 left-0 animate-pulse z-[60]"></div>
-        <div id="content-area" class="max-w-6xl mx-auto">
-            <!-- Content will be injected here -->
+    <!-- 4. MAIN CONTENT -->
+    <main id="main-area" class="lg:ml-[280px] min-h-screen transition-all duration-300">
+        <header class="h-20 flex items-center justify-between px-6 lg:px-8 bg-white/70 backdrop-blur-md sticky top-0 z-40 border-b">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 id="page-title" class="text-sm lg:text-lg font-bold text-slate-800 uppercase tracking-tighter">Dashboard</h1>
+                    <p class="text-[9px] text-emerald-600 font-bold uppercase tracking-widest hidden lg:block">Handling System v2.1</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="fetchAllData()" class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center hover:rotate-180 transition-all duration-500">
+                    <i class="fas fa-sync-alt text-xs"></i>
+                </button>
+                <div id="header-time" class="text-right border-l pl-4 hidden md:block">
+                    <p id="live-clock" class="font-bold text-emerald-700 leading-tight">00:00:00</p>
+                    <p id="live-date" class="text-[9px] uppercase font-bold text-slate-500">Loading...</p>
+                </div>
+            </div>
+        </header>
+
+        <div id="content" class="p-4 lg:p-8">
+            <!-- Dynamic Content Here -->
         </div>
     </main>
 
-    <!-- FLOATING ACTION BUTTON -->
-    <div id="fab" class="btn-float hidden" onclick="handlePlusButton()">
-        <i class="fas fa-plus text-2xl"></i>
-    </div>
-
-    <!-- MODAL -->
-    <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl">
+    <!-- 5. MODAL POPUP -->
+    <div id="modal" class="fixed inset-0 z-[110] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-slide-up">
             <div class="p-6 border-b flex justify-between items-center">
-                <h3 id="modal-title" class="font-bold text-slate-800">Form Input</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
+                <h3 id="modal-title" class="font-bold text-slate-800 uppercase text-sm tracking-widest">Detail</h3>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div id="modal-body" class="p-6 max-h-[70vh] overflow-y-auto"></div>
+            <div id="modal-body" class="p-6 max-h-[75vh] overflow-y-auto"></div>
         </div>
     </div>
 
     <script>
+        // --- KONFIGURASI ---
         const API_URL = 'https://script.google.com/macros/s/AKfycbzcZj1bulTIauGRDLrgeTt7CFWgRXEpP8UTnoUCwgxzZCVY5YPXrM4CCIjXsKFuyuqV/exec'; // GANTI DENGAN URL DEPLOY ANDA
-        let cacheData = {}; 
-        let currentPage = 'dashboard';
+        let masterData = {}; // Global Cache
 
-        // 1. JAM & TANGGAL (HIJRI FIX)
+        // --- CORE ENGINE ---
+        window.addEventListener('load', async () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Inisialisasi Data
+            document.getElementById('load-bar').style.width = '60%';
+            await fetchAllData();
+            document.getElementById('load-bar').style.width = '100%';
+            
+            setTimeout(() => {
+                const ws = document.getElementById('welcome-screen');
+                if(ws) {
+                    ws.style.opacity = '0';
+                    setTimeout(() => ws.remove(), 800);
+                }
+            }, 500);
+            
+            navTo('dashboard');
+        });
+
+        async function fetchAllData() {
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                // Menggunakan parameter action=readAll yang kita buat di Apps Script
+                const response = await fetch(`${API_URL}?action=readAll`);
+                const result = await response.json();
+                masterData = result;
+                console.log("Data Synced:", masterData);
+            } catch (err) {
+                console.error("Sync Error:", err);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
         function updateClock() {
             const now = new Date();
-            const saudiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
+            const saudi = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
+            document.getElementById('live-clock').innerText = saudi.toLocaleTimeString('id-ID', { hour12: false });
             
-            document.getElementById('live-clock').innerText = saudiTime.toLocaleTimeString('id-ID', { hour12: false });
-            
-            // Masehi
-            const optMasehi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('live-date-masehi').innerText = saudiTime.toLocaleDateString('id-ID', optMasehi);
-            
-            // Hijriah (Intl format fix)
-            const optHijri = new Intl.DateTimeFormat('id-ID-u-ca-islamic-uma-nu-latn', {
-                day: 'numeric', month: 'long', year: 'numeric'
-            }).format(saudiTime);
-            document.getElementById('live-date-hijri').innerText = optHijri + ' H';
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const masehi = saudi.toLocaleDateString('id-ID', options);
+            document.getElementById('live-date').innerText = masehi;
         }
-        setInterval(updateClock, 1000);
-        updateClock();
 
-        // 2. NAVIGASI & SPEED OPTIMIZATION
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('closed');
+            sidebar.classList.toggle('lg:translate-x-0');
+        }
+
+        // --- NAVIGATION & RENDERING ---
         async function navTo(page) {
-            currentPage = page;
             document.getElementById('page-title').innerText = page;
-            document.getElementById('loading-bar').classList.remove('hidden');
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.getElementById(`nav-${page}`);
+            if(activeNav) activeNav.classList.add('active');
             
-            // FAB Visibility
-            const fab = document.getElementById('fab');
-            page === 'dashboard' ? fab.classList.add('hidden') : fab.classList.remove('hidden');
-
-            try {
-                // Fetch data (Gunakan cache jika memungkinkan untuk responsivitas)
-                const res = await fetch(`${API_URL}?action=readAll`);
-                const allData = await res.json();
-                cacheData = allData;
-
-                renderContent(page, allData);
-            } catch (e) {
-                console.error("Gagal memuat data", e);
-            } finally {
-                document.getElementById('loading-bar').classList.add('hidden');
-            }
+            if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('closed');
+            
+            renderPage(page);
         }
 
-        function renderContent(page, data) {
-            const container = document.getElementById('content-area');
+        function renderPage(page) {
+            const container = document.getElementById('content');
             
             if (page === 'dashboard') {
-                container.innerHTML = renderDashboard(data);
-            } else if (page === 'itinerary') {
-                container.innerHTML = renderItinerary(data.itinerary);
-            } else if (page === 'roomlist') {
-                container.innerHTML = renderRoomlist(data.roomlist);
-            } else {
-                container.innerHTML = renderGenericTable(page, data[page]);
+                container.innerHTML = renderDashboard();
+                return;
             }
+
+            const data = masterData[page] || [];
+            let html = `
+                <div class="mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div class="relative w-full md:w-96">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                        <input type="text" id="search-input" onkeyup="filterData('${page}')" placeholder="Cari di ${page}..." 
+                        class="w-full pl-12 pr-4 py-3 rounded-2xl bg-white border-none shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                    </div>
+                    <button onclick="openEntryForm('${page}')" class="w-full md:w-auto px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
+                        <i class="fas fa-plus"></i> Tambah Baru
+                    </button>
+                </div>
+                <div class="glass-card overflow-hidden">
+                    <div id="data-render">${renderTable(page, data)}</div>
+                </div>`;
+            
+            container.innerHTML = html;
         }
 
-        // 3. DASHBOARD INTEGRATION
-        function renderDashboard(data) {
-            // Filter Itinerary Terdekat (Hari ini atau Besok)
-            const now = new Date();
-            const itineraryTerdekat = data.itinerary
-                .filter(i => new Date(i.tanggal) >= now.setHours(0,0,0,0))
-                .sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal))
-                .slice(0, 2);
+        function renderDashboard() {
+            const pesananPending = masterData.pesanan ? masterData.pesanan.filter(p => p.status !== 'Selesai').length : 0;
+            const totalJamaah = masterData.jamaah ? masterData.jamaah.length : 0;
 
             return `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- STATS & JADWAL SHOLAT -->
-                <div class="md:col-span-2 space-y-6">
-                    <div class="glass-card p-6 bg-slate-900 text-white">
-                        <p class="text-xs text-emerald-400 font-bold uppercase tracking-widest mb-1">Itinerary Terdekat</p>
-                        ${itineraryTerdekat.map(i => `
-                            <div class="flex justify-between items-center border-b border-slate-700 py-3 last:border-0">
-                                <div>
-                                    <p class="font-bold text-sm">${i.kegiatan}</p>
-                                    <p class="text-[10px] text-slate-400">${formatDate(i.tanggal)} | ${i.waktu}</p>
-                                </div>
-                                <span class="text-[10px] bg-emerald-600 px-2 py-1 rounded-md">${i.lokasi}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="glass-card p-4 text-center">
-                            <p class="text-[10px] text-slate-400 uppercase font-bold">Pesanan Pending</p>
-                            <p class="text-2xl font-bold text-amber-600">${data.pesanan.filter(p => p.status !== 'Selesai').length}</p>
-                        </div>
-                        <div class="glass-card p-4 text-center">
-                            <p class="text-[10px] text-slate-400 uppercase font-bold">Total Jamaah</p>
-                            <p class="text-2xl font-bold text-emerald-600">${data.jamaah.length}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SIDEBAR DASHBOARD (PESANAN & CATATAN) -->
-                <div class="space-y-6">
-                    <div class="glass-card p-5">
-                        <h4 class="font-bold text-xs mb-4 flex items-center gap-2"><i class="fas fa-bell text-amber-500"></i> PESANAN TERBARU</h4>
-                        <div class="space-y-3">
-                            ${data.pesanan.slice(0, 3).map(p => `
-                                <div class="text-[11px] p-3 bg-slate-50 rounded-lg border-l-4 border-amber-500">
-                                    <p class="font-bold">${p.nama_jamaah}</p>
-                                    <p class="text-slate-500">${p.item_pesanan}</p>
-                                </div>
-                            `).join('')}
-                        </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="glass-card p-8 bg-emerald-900 text-white relative overflow-hidden">
+                        <i class="fas fa-kaaba absolute right-[-20px] bottom-[-20px] text-9xl opacity-10"></i>
+                        <h2 class="font-martel text-2xl font-bold">Assalamu'alaikum, Dokter Fathur</h2>
+                        <p class="text-emerald-200 text-sm mt-2 font-light">Sistem Handling siap digunakan. Ada ${pesananPending} pesanan yang butuh perhatian.</p>
                     </div>
                     
-                    <div class="glass-card p-5">
-                        <h4 class="font-bold text-xs mb-4 flex items-center gap-2"><i class="fas fa-pen text-blue-500"></i> CATATAN MEDIS</h4>
-                        <div class="space-y-3">
-                            ${data.catatan.slice(0, 2).map(c => `
-                                <div class="text-[11px] p-3 bg-slate-50 rounded-lg">
-                                    <p class="font-bold text-emerald-700">${c.nama_jamaah}</p>
-                                    <p class="italic text-slate-500">"${c.diagnosa}"</p>
-                                </div>
-                            `).join('')}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="glass-card p-4 text-center">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Jamaah</p>
+                            <p class="text-xl font-bold text-slate-800">${totalJamaah}</p>
                         </div>
+                        <div class="glass-card p-4 text-center border-b-4 border-orange-400">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Pesanan</p>
+                            <p class="text-xl font-bold text-orange-600">${pesananPending}</p>
+                        </div>
+                        <div class="glass-card p-4 text-center">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Suhu Makkah</p>
+                            <p class="text-xl font-bold text-slate-800">34°C</p>
+                        </div>
+                         <div class="glass-card p-4 text-center">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Kurs SAR</p>
+                            <p class="text-xl font-bold text-emerald-700">Rp4.215</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6">
+                    <h3 class="font-bold text-slate-800 mb-4 flex justify-between items-center text-sm">
+                        <span><i class="fas fa-history mr-2 text-emerald-600"></i> CATATAN TERBARU</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg">Update Live</span>
+                    </h3>
+                    <div class="space-y-4">
+                        ${(masterData.catatan || []).slice(-3).reverse().map(c => `
+                            <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-emerald-500">
+                                <p class="text-xs font-bold text-slate-700">${c.judul || 'Info'}</p>
+                                <p class="text-[10px] text-slate-500 mt-1 line-clamp-2">${c.isi || '-'}</p>
+                            </div>
+                        `).join('') || '<p class="text-xs text-slate-400 text-center py-10">Belum ada catatan</p>'}
                     </div>
                 </div>
             </div>`;
         }
 
-        // 4. ITINERARY WITH SORT & FILTER
-        function renderItinerary(list) {
-            // Sorting berdasarkan Tanggal & Waktu
-            const sorted = list.sort((a, b) => {
-                let dA = new Date(a.tanggal + ' ' + a.waktu);
-                let dB = new Date(b.tanggal + ' ' + b.waktu);
-                return dA - dB;
+        function renderTable(page, data) {
+            if (!data || data.length === 0) return `<div class="p-20 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">Data Tidak Ditemukan</div>`;
+            
+            const headers = Object.keys(data[0]).filter(h => h !== 'id');
+            
+            let html = `<div class="overflow-x-auto"><table class="w-full text-left">`;
+            html += `<thead class="bg-slate-50/50 text-[10px] uppercase font-bold text-slate-500 border-b"><tr>`;
+            headers.forEach(h => html += `<th class="px-6 py-4">${h.replace(/_/g, ' ')}</th>`);
+            html += `</tr></thead><tbody class="divide-y divide-slate-100">`;
+            
+            data.forEach(item => {
+                html += `<tr class="hover:bg-emerald-50/50 cursor-pointer transition-colors" onclick='showDetail("${page}", ${JSON.stringify(item)})'>`;
+                headers.forEach(h => {
+                    let val = item[h] || '-';
+                    let badge = '';
+                    if (h === 'status' && val === 'Selesai') badge = 'bg-emerald-100 text-emerald-700';
+                    if (h === 'status' && val === 'Pending') badge = 'bg-orange-100 text-orange-700';
+                    
+                    html += `<td class="px-6 py-4 text-sm">
+                        <span class="${badge ? 'px-2 py-1 rounded-md font-bold text-[10px]' : 'text-slate-600'}">${val}</span>
+                    </td>`;
+                });
+                html += `</tr>`;
             });
-
-            return `
-            <div class="glass-card overflow-hidden">
-                <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
-                    <input type="date" id="filter-date" onchange="filterItineraryByDate()" class="text-xs p-2 rounded-lg border">
-                    <span class="text-[10px] font-bold text-slate-400">TOTAL: ${sorted.length} KEGIATAN</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-100 text-[10px] uppercase font-bold text-slate-500">
-                            <tr>
-                                <th class="p-4">Waktu</th>
-                                <th class="p-4">Kegiatan</th>
-                                <th class="p-4">Lokasi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="itinerary-body">
-                            ${sorted.map(i => `
-                                <tr class="border-b hover:bg-slate-50">
-                                    <td class="p-4">
-                                        <p class="font-bold">${formatTime(i.waktu)}</p>
-                                        <p class="text-[10px] text-slate-400">${formatDate(i.tanggal)}</p>
-                                    </td>
-                                    <td class="p-4 font-semibold text-slate-700">${i.kegiatan}</td>
-                                    <td class="p-4"><span class="bg-slate-200 px-2 py-1 rounded text-[10px]">${i.lokasi}</span></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>`;
+            
+            html += `</tbody></table></div>`;
+            return html;
         }
 
-        // 5. ROOMLIST DENGAN PLOTTING LANGSUNG
-        function renderRoomlist(list) {
-            return `
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                ${list.map(r => `
-                    <div class="glass-card p-5 border-t-4 border-emerald-500">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="font-bold text-lg">Kamar ${r.nomor_kamar}</h3>
-                            <span class="text-[10px] bg-slate-100 px-2 py-1 rounded font-bold">${r.tipe_kamar}</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="text-sm p-2 bg-emerald-50 rounded text-emerald-800 font-bold">${r.nama_jamaah_1 || '-'}</div>
-                            <div class="text-sm p-2 bg-emerald-50 rounded text-emerald-800 font-bold">${r.nama_jamaah_2 || '-'}</div>
-                            <div class="text-sm p-2 bg-emerald-50 rounded text-emerald-800 font-bold">${r.nama_jamaah_3 || '-'}</div>
-                            <div class="text-sm p-2 bg-emerald-50 rounded text-emerald-800 font-bold">${r.nama_jamaah_4 || '-'}</div>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-4 uppercase font-bold">Lokasi: ${r.hotel}</p>
-                    </div>
-                `).join('')}
-            </div>`;
+        // --- CRUD OPERATIONS ---
+        function showDetail(type, item) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            modal.classList.remove('hidden');
+            
+            let html = `<div class="space-y-4">`;
+            for (let key in item) {
+                if (key === 'id') continue;
+                html += `
+                    <div class="flex justify-between items-center border-b border-slate-50 pb-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">${key.replace(/_/g,' ')}</span>
+                        <span class="text-sm font-semibold text-slate-700">${item[key] || '-'}</span>
+                    </div>`;
+            }
+            html += `</div>
+                <div class="mt-8 grid grid-cols-2 gap-3">
+                    <button onclick='editData("${type}", ${JSON.stringify(item)})' class="py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-200 transition">EDIT DATA</button>
+                    <button onclick="deleteData('${type}', '${item.id}')" class="py-3 bg-red-50 text-red-600 rounded-2xl font-bold text-xs hover:bg-red-100 transition">HAPUS</button>
+                </div>`;
+            body.innerHTML = html;
         }
 
-        // 6. MODAL & PLOTTING INPUTS
-        function handlePlusButton() {
+        function openEntryForm(page, existingData = null) {
             const body = document.getElementById('modal-body');
             document.getElementById('modal').classList.remove('hidden');
-            
-            if (currentPage === 'roomlist') {
-                // Dropdown Nama Jamaah dari Cache Data Jamaah
-                const jamaahOpts = cacheData.jamaah.map(j => `<option value="${j.nama_lengkap}">${j.nama_lengkap} (Bus ${j.bus})</option>`).join('');
-                
-                body.innerHTML = `
-                <form id="form-data" class="space-y-4">
-                    <input type="hidden" name="action" value="insert">
-                    <input type="hidden" name="sheet" value="roomlist">
-                    <div>
-                        <label class="text-xs font-bold text-slate-500">Nomor Kamar</label>
-                        <input type="text" name="nomor_kamar" class="w-full p-3 bg-slate-100 rounded-xl mt-1">
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-slate-500">Tipe Kamar</label>
-                        <select name="tipe_kamar" class="w-full p-3 bg-slate-100 rounded-xl mt-1">
-                            <option>Double</option><option>Triple</option><option>Quad</option>
-                        </select>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold text-slate-500">Pilih Jamaah (Plotting)</label>
-                        <select name="nama_jamaah_1" class="w-full p-3 bg-slate-100 rounded-xl">${jamaahOpts}</select>
-                        <select name="nama_jamaah_2" class="w-full p-3 bg-slate-100 rounded-xl"><option value="">- Kosong -</option>${jamaahOpts}</select>
-                        <select name="nama_jamaah_3" class="w-full p-3 bg-slate-100 rounded-xl"><option value="">- Kosong -</option>${jamaahOpts}</select>
-                        <select name="nama_jamaah_4" class="w-full p-3 bg-slate-100 rounded-xl"><option value="">- Kosong -</option>${jamaahOpts}</select>
-                    </div>
-                    <button type="button" onclick="submitData()" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold mt-4 shadow-lg">SIMPAN PLOTTING</button>
-                </form>`;
-            } else {
-                // Form Otomatis berdasarkan Page lain
-                body.innerHTML = `<p class="text-center text-slate-400">Loading form...</p>`;
-                // ... logika form generic lainnya
-            }
-        }
+            document.getElementById('modal-title').innerText = existingData ? `Edit ${page}` : `Tambah ${page}`;
 
-        async function submitData() {
-            const form = document.getElementById('form-data');
-            const formData = new FormData(form);
-            const plainData = Object.fromEntries(formData.entries());
+            // Ambil header dari data yang ada atau gunakan default
+            const fields = masterData[page] && masterData[page].length > 0 
+                           ? Object.keys(masterData[page][0]) 
+                           : ['judul', 'isi']; // fallback
 
-            document.getElementById('loading-bar').classList.remove('hidden');
-            
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(plainData)
-                });
-                const result = await res.json();
-                if(result.status === 'success') {
-                    closeModal();
-                    navTo(currentPage);
+            let html = `<form id="form-entry" class="space-y-4">`;
+            fields.forEach(key => {
+                if (key === 'id') {
+                    if(existingData) html += `<input type="hidden" name="id" value="${existingData.id}">`;
+                    return;
                 }
-            } catch (e) {
-                alert("Gagal menyimpan!");
+                const val = existingData ? existingData[key] : '';
+                html += `
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">${key.replace(/_/g,' ')}</label>
+                        <input type="text" name="${key}" value="${val}" class="w-full p-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-emerald-500 outline-none mt-1 text-sm font-semibold">
+                    </div>`;
+            });
+            html += `
+                <button type="button" onclick="submitData('${page}', '${existingData ? 'update' : 'insert'}')" 
+                class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 mt-4">
+                    SIMPAN PERUBAHAN
+                </button>
+            </form>`;
+            body.innerHTML = html;
+        }
+
+        async function submitData(page, action) {
+            const form = document.getElementById('form-entry');
+            const data = Object.fromEntries(new FormData(form).entries());
+            
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, sheet: page, data })
+                });
+                const res = await response.json();
+                if (res.status === 'success') {
+                    closeModal();
+                    await fetchAllData(); // Refresh global cache
+                    navTo(page);
+                }
+            } catch (err) {
+                alert("Gagal koneksi ke server");
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
-        // UTILS
-        function formatDate(d) { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit', month:'short'}); }
-        function formatTime(t) { 
-            if(!t) return '--:--';
-            // Menghapus kode panjang jika ada dan hanya ambil HH:mm
-            const match = String(t).match(/(\d{2}:\d{2})/);
-            return match ? match[1] : t;
+        async function deleteData(page, id) {
+            if (!confirm('Hapus data ini secara permanen?')) return;
+            
+            document.getElementById('loading').style.display = 'flex';
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', sheet: page, data: { id } })
+                });
+                const res = await response.json();
+                if (res.status === 'success') {
+                    closeModal();
+                    await fetchAllData();
+                    navTo(page);
+                }
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
         }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('closed'); }
 
-        // Initial Load
-        window.onload = () => navTo('dashboard');
+        function filterData(page) {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = masterData[page].filter(item => 
+                Object.values(item).some(val => String(val).toLowerCase().includes(query))
+            );
+            document.getElementById('data-render').innerHTML = renderTable(page, filtered);
+        }
+
+        function editData(page, item) {
+            openEntryForm(page, item);
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
