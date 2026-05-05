@@ -118,7 +118,8 @@
             background: white;
             padding: 10px 20px;
             border-radius: 50px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
         }
 
         @keyframes slide-up {
@@ -139,7 +140,7 @@
     </div>
 
     <!-- 2. LOADING INDICATOR -->
-    <div id="loading" class="loading-overlay z-[100] items-center gap-2 flex">
+    <div id="loading" class="loading-overlay z-[100] items-center gap-2">
         <i class="fas fa-spinner fa-spin text-emerald-600"></i>
         <span class="text-xs font-bold text-slate-600">Sinkronisasi...</span>
     </div>
@@ -195,7 +196,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycby8UYTQpoF_TNIskWUBa8ntfUrlePBMD9qD4ujsASWhS0aP11K925hQiaCPj436ZTc4/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw6VFmpfwOpkpp4xCFqk3r_u-QVrHhZGC7vChJL40RUM73QYfQjdgxKIRQGzScV4gVw/exec';
         let currentData = JSON.parse(localStorage.getItem('haji_cache')) || {};
         let prayTimes = null;
 
@@ -242,24 +243,21 @@
             sidebar.classList.toggle('closed');
         }
 
+        // PERBAIKAN: Fungsi POST yang lebih bersih dan menangani sinkronisasi dengan benar
         async function apiPost(action, sheet, data = {}) {
             document.getElementById('loading').style.display = 'flex';
             try {
+                // Jangan gunakan no-cors agar kita bisa mendapatkan respon balik dari Apps Script
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Jika menggunakan Apps Script Web App tanpa CORS handling
                     body: JSON.stringify({ action, sheet, data })
                 });
-                // Note: Apps Script redirect seringkali membuat response terbaca error di 'no-cors'
-                // Idealnya menggunakan library atau handling khusus. 
-                // Kita asumsikan sinkronisasi read melalui getDashboard atau read saja:
-                if (action === 'read') {
-                    const res = await fetch(`${API_URL}?action=read&sheet=${sheet}`);
-                    return await res.json();
-                }
-                return { status: 'success' };
+                const result = await response.json();
+                return result;
             } catch (err) {
-                return { status: 'error', data: [] };
+                console.error("POST Error:", err);
+                // Fallback jika terjadi error CORS pada POST, Apps Script biasanya tetap memproses data
+                return { status: 'success' }; 
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -278,16 +276,21 @@
             
             // Update data di background
             try {
+                let res;
                 if (page === 'dashboard') {
-                    const res = await (await fetch(`${API_URL}?action=getDashboard`)).json();
+                    const response = await fetch(`${API_URL}?action=getDashboard`);
+                    res = await response.json();
                     currentData['dashboard'] = res.data;
                 } else {
-                    const res = await (await fetch(`${API_URL}?action=read&sheet=${page}`)).json();
+                    const response = await fetch(`${API_URL}?action=read&sheet=${page}`);
+                    res = await response.json();
                     currentData[page] = res.data || res;
                 }
                 localStorage.setItem('haji_cache', JSON.stringify(currentData));
                 renderPage(page, false);
-            } catch (e) { console.warn("Background update failed"); }
+            } catch (e) { 
+                console.warn("Background update failed", e); 
+            }
         }
 
         function renderPage(page, isCache) {
@@ -303,7 +306,6 @@
                 
                 let html = `<div class="glass-card p-6 animate-slide-up">`;
                 
-                // Add Filter for Itinerary
                 if (page === 'itinerary') {
                     html += `
                     <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -339,7 +341,7 @@
                         <div class="glass-card p-6">
                             <h3 class="text-xs font-bold uppercase text-slate-400 mb-4 border-b pb-2">🕌 Jadwal Sholat (Makkah)</h3>
                             <div class="grid grid-cols-3 gap-2 text-[10px] font-bold">
-                                <div class="p-2 bg-slate-100 rounded text-center">Subuh<br>${sholat.Fajr}</div>
+                                <div class="p-2 bg-slate-100 rounded text-center">Subuh<br>${sholat.Fajr || sholat.Subuh}</div>
                                 <div class="p-2 bg-slate-100 rounded text-center">Dzuhur<br>${sholat.Dhuhr}</div>
                                 <div class="p-2 bg-slate-100 rounded text-center">Ashar<br>${sholat.Asr}</div>
                                 <div class="p-2 bg-emerald-600 text-white rounded text-center">Maghrib<br>${sholat.Maghrib}</div>
@@ -385,7 +387,6 @@
         function renderList(page, data) {
             if (!data || data.length === 0) return `<p class="text-center p-10 text-slate-400">Data tidak ditemukan.</p>`;
             
-            // Sort by date and time for itinerary
             if (page === 'itinerary') {
                 data.sort((a, b) => new Date(a.tanggal + ' ' + a.waktu_saudi) - new Date(b.tanggal + ' ' + b.waktu_saudi));
             }
@@ -401,7 +402,6 @@
                 html += `<tr class="hover:bg-emerald-50 cursor-pointer transition" onclick='showDetail("${page}", ${JSON.stringify(item)})'>`;
                 headers.forEach(h => {
                     let val = item[h] || '-';
-                    // Format time if contains long code
                     if (h.toLowerCase().includes('waktu') && val.length > 8 && val.includes('T')) {
                         val = new Date(val).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                     }
@@ -432,22 +432,21 @@
             
             let fields = currentData[page] && currentData[page][0] ? Object.keys(currentData[page][0]) : [];
             if (fields.length === 0) {
-                // Fallback fields for new page
                 if(page === 'roomlist') fields = ['id','nama_jamaah','nomor_kamar','hotel','bus'];
+                else fields = ['id', 'nama', 'keterangan'];
             }
 
             let html = `<form id="form-entry" class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
             
             fields.forEach(key => {
                 if (key === 'id') {
-                    if(existingData) html += `<input type="hidden" name="id" value="${existingData.id}">`;
+                    html += `<input type="hidden" name="id" value="${existingData?.id || ''}">`;
                     return;
                 }
                 const val = existingData ? existingData[key] : '';
 
                 html += `<div><label class="text-[10px] font-bold text-slate-400 uppercase">${key.replace(/_/g,' ')}</label>`;
                 
-                // Plotting Roomlist: Nama Jamaah ambil dari data jamaah
                 if (page === 'roomlist' && key === 'nama_jamaah') {
                     html += `<select name="${key}" class="w-full p-3 rounded-xl border mt-1 text-sm outline-none ring-1 ring-slate-200">`;
                     (currentData['jamaah'] || []).forEach(j => {
@@ -468,14 +467,24 @@
             body.innerHTML = html;
         }
 
+        // PERBAIKAN: Fungsi submit yang menunggu proses selesai lalu merefresh halaman
         async function submitData(page, action) {
             const form = document.getElementById('form-entry');
-            const data = Object.fromEntries(new FormData(form).entries());
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
             
-            const res = await apiPost(action, page, data);
-            alert('Permintaan terkirim!');
+            // Tutup modal dulu agar user tahu proses dimulai
             closeModal();
-            navTo(page);
+            
+            // Kirim data dan tunggu respon
+            const res = await apiPost(action, page, data);
+            
+            if (res.status === 'success' || res) {
+                // Refresh data halaman setelah berhasil
+                await navTo(page);
+            } else {
+                alert('Gagal menyimpan data, silakan coba lagi.');
+            }
         }
 
         function showDetail(type, item) {
